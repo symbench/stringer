@@ -38,7 +38,7 @@ object at initialization. The `gen()` function of `StringGrammar` produces desig
 The `mut()` function will randomly select a point mutation for each generated string and then, after ensuring it is valid for
 the given design string, apply the mutation. These strings are stored in `StringGrammar.design_strings['mutants']`.
 
-`grid.py` contains starter code for triagonal, hexagonal, square grids for interpreting design strings
+`grid.py` contains starter code for triagonal, hexagonal, square grids for interpreting design strings.
 
 ### TODO - in no particular order
 - [x] create a string grammar to produce strings satisfying constraints in the user-specified `config_dict`
