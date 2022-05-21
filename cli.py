@@ -52,6 +52,7 @@ def run():
     #assert sg.generated is not None and sg.mutants is not None
     print("generated and mutated design strings")
     print(sg.get_generated_designs()[:10])
+    print(sg.get_mutated_designs()[:10])
     # square_grid = SnapGrid(geo='square')
     # tri_grid = SnapGrid(geo='tri')
     # hex_grid = SnapGrid(geo='hex')

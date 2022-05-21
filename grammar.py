@@ -16,12 +16,27 @@ from tqdm import tqdm
 import os
 
 
+
+"""
+Todo
+- make horizontal props prime
+- change weights of symbols
+- symmetric on one or more axes
+-
+
+generated string with structure --> convert that to graph (undirected, weighted edges or attributes)
+    --> add directions / top sort (bookkeeping/readability/sanity check)
+
+fuselage (passengers), wings (batteries), cylinders, propellers (motors) -- design/connection sequence
+"""
 class StringGrammar:
 
     config_dict = {'symbols': {'v': 0.5,  # vertical propeller
                                'f': 0.1,  # fuselage
                                'r': 0.2,  # rail, multiple cylinders connected in row to hold props
                                'w': 0.2},  # single wing
+                    # todo probability of grouping [ and (
+                    # todo assert even numbers in group ( and balanced wings in [
                    'num_samples': 100,  # number of strings to generate
                    'max_len': 10,  # max length of string allowed
                    'horizontal_props': False,  # use horizontal props in horizontal position
@@ -36,6 +51,7 @@ class StringGrammar:
                                  'pop_prop': 0.15,  # remove a propeller
                                  'pop_wing': 0.15,  # remove a wing
                                  'push_wing': 0.25},  # add a wing
+                   #  todo add mutation for regrouping
                    'interpret_direction': 'fb',  # bf -- front to back or back to front, which way to read the string
                    'props_on_wings': False,  # mount propellers onto the wings
                    'branch_factor': 2,  # increase frequency of cylinders
@@ -225,10 +241,10 @@ class StringGrammar:
         """
         shovel -
         sputnik -
-        bugger -
+        bugger - [(pppppppppppp)(pppppppppppp)][wfw][(pppppppppppp)(pppppppppppp)]
         vudoo -
         vanderfool -
-        joyride -
+        joyride - [(hh)(hh)][w'bw's]s[ww]
         vunderkind -
         """
         pass
