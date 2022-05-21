@@ -1,1 +1,4 @@
 .idea/*
+scratch
+.DS_Store
+__pycache__

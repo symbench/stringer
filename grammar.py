@@ -11,125 +11,252 @@
 # GNU General Public License for more details.
 
 
-import numpy as np
-import pyvista as pv
 import random
+from tqdm import tqdm
 import os
-import sys
-from typing import List, Dict
 
 
-"""
-class to generate designs from string given a bounding geometry
-
-
-
-"""
-class SnapMesh:
-    def __init__(self, geo='cube'):
-        assert isinstance(geo, str)
-        assert geo in ['cube', 'cylinder', 'sphere', 'pyramid']
-
-        self.designs = {}
-
-        values = np.linspace(0, 10, 1000).reshape((10, 10, 10))
-        values.shape
-
-        # Create the spatial reference
-        grid = pv.UniformGrid()
-
-        # Set the grid dimensions: shape + 1 because we want to inject our values on
-        #   the CELL data
-        grid.dimensions = np.array(values.shape) + 1
-
-        # Edit the spatial reference
-        grid.origin = (0, 0, 0)  # The bottom left corner of the data set
-        grid.spacing = (4, 4, 4)  # These are the cell sizes along each axis
-
-        # Add the data values to the cell data
-        grid.cell_data["values"] = values.flatten(order="F")  # Flatten the array!
-
-        # Now plot the grid!
-        grid.plot(show_edges=True)
-
-    # initialize the mesh object of specified geometry
-    def _initialize(self):
-        pass
-
-    # display the expansion (from a design string) inside its bounding volume
-    def _render(self, expansion):
-        pass
-
-
-"""
-Class to manage and produce the strings given configuration and connection rules
-
-"""
 class StringGrammar:
 
+    config_dict = {'symbols': {'v': 0.5,  # vertical propeller
+                               'f': 0.1,  # fuselage
+                               'r': 0.2,  # rail, multiple cylinders connected in row to hold props
+                               'w': 0.2},  # single wing
+                   'num_samples': 100,  # number of strings to generate
+                   'max_len': 10,  # max length of string allowed
+                   'horizontal_props': False,  # use horizontal props in horizontal position
+                   'min_vertical': 1,  # the minimum number of vertical propellers that must be present on a design
+                   'min_horizontal': 0,  # " .. horizontal .. "
+                   'min_wings': 2,  # minimum number of wings
+                   'min_fuselage': 1,  # " .. fuselage .. "
+                   'symmetric': False,  # produce symmetric designs
+                   'mutate': False,  # produce mutations of generated designs
+                   'mutations': {'flip_orient': 0.15,  # reverse the non-base elements of the string
+                                 'push_prop': 0.3,  # add a propeller
+                                 'pop_prop': 0.15,  # remove a propeller
+                                 'pop_wing': 0.15,  # remove a wing
+                                 'push_wing': 0.25},  # add a wing
+                   'interpret_direction': 'fb',  # bf -- front to back or back to front, which way to read the string
+                   'props_on_wings': False,  # mount propellers onto the wings
+                   'branch_factor': 2,  # increase frequency of cylinders
+                   'connection_angles': [30, 45, 60, 90, 180]  # degrees to connect components
+                   #  todo allowable connections: check model to determine valid
+                   }
 
     """
-        Store the string generation rules in a config dictionary
-
-        Keys:
-            symbols (List[str]): the characters allowed in the vehicle string
-            frequency (List[float]): the distribution to sample from when adding new characters
-
-
+    Connections (check remote machine with e.g. trowel and rake to check on these: 
+    
+    cylinder_flip
+    orient
+    (wing-->battery)
+    naca2port
+    (fuselage-->seats)
+    (prop-->motor)
     """
-    default_config = {'symbols': ['x', 'v', 'f', 'h', 'c'],  # component that are represented in design strings
-                      #  x is a pair of wings, v is a vertical propellers, f is a fuselage, h is a horizontal propeller, c is a cylinder
-                      'frequency': {'x': 0.2, 'v': 0.3, 'f': 0.1, 'h': 0.15, 'c': .25},  # how often each component appears
-                      'max_len': 10,  # longest length of string allowed
-                      'num_samples': 100,  # the number of strings to generate
-                      'horizontal_props': False,  # use props in horizontal position
-                      'min_vertical': 1,  # the minimum number of vertical propellers that must be present on a design
-                      'min_horizontal': 0,  # " .. horizontal .. "
-                      'min_wings': 2,  # minimum number of wings
-                      'min_fuselage': 1,  # " .. fuselage .. "
-                      'symmetric': True,  # produce symmetric designs
-                      'mutations': ['flip_orient', 'push_prop', 'pop_prop', 'pop_wing', 'push_wing'],
-                      'interpret_direction': 'fb',  # mo, bt --> front to back, middle out, bottom to top
-                      'props_on_wings': False,  # mount propellers onto the wings
-                      'branching_factor': 2,  # number of cylinders that can be connected together before connecting something else e.g. |-- = 2
-                      }
 
-    def __init__(self, config=default_config):
-        self.config = config
+    def __init__(self, num_samples, max_len, branch_factor=2, horizontal_props=False, symmetric=False,
+                 props_on_wings=False, mutate=False, save=False):
+
+        #  change defaults from command line args
+        if self.config_dict['num_samples'] != num_samples:
+            self.config_dict['num_samples'] = num_samples
+
+        if self.config_dict['max_len'] != max_len:
+            self.config_dict['max_len'] = max_len
+
+        if branch_factor != 2:
+            assert branch_factor in range(1, 5)
+            self.config_dict['branch_factor'] = branch_factor
+            cf = self.config_dict['frequency']['r']
+
+            #  small increase to connector frequency for higher branch factor (semi-arbitrary)
+            self.config_dict['frequency']['r'] = cf * (branch_factor ** .1)
+
+        if horizontal_props:
+            self.config_dict['horizontal_props'] = True
+            #  redistribute symbol weights
+            self.config_dict['symbols'].update({'h': 0.15})
+            self.config_dict['symbols']['v'] = 0.35
+
+        if symmetric:  # todo account for this in generation routine
+            self.config_dict['symmetric'] = True
+        if props_on_wings:  # todo account for this in generation routine
+            self.config_dict['props_on_wings'] = True
+        if mutate:
+            self.config_dict['mutate'] = True
+
+        # save generated
+        self.save = save
+        self.save_dir = os.path.join(os.getcwd(), 'generated')
+
+        # track past designs stored as lists of generators
+        self.design_strings = {}
+        #  map between original design strings and labeled design strings
+        self.labeled_designs = {'generated': {}, 'mutants': {}}
 
 
-    def is_valid(self, generated_string):
-        lgs = list(generated_string)  # grab all characters
-        lgs.count('')
-        return 'x' in lgs and 'v' in lgs and 'f' in lgs and len(generated_string) <= self.config['max_len']
+    def _frequency_total(self):
+        print(f"frequency total: {sum(self.config_dict['frequency'].values())}")
 
-    def generate(self):
-        if not self.config['horizontal_props']:
-            self.config['symbols'].remove('h')
-        symbols = self.config['symbols']
+    def _is_valid(self, generated_string):
+        lgs = list(generated_string)
+        #lgs.count('')
+        return 'w' in lgs and lgs.count('w') >= 2 and 'v' in lgs and\
+               'f' in lgs and len(generated_string) <= self.config_dict['max_len']
 
+    def _generate(self):
+
+        freq = list(self.config_dict['symbols'].values())
+        symbols = list(self.config_dict['symbols'].keys())
+        max_len = self.config_dict['max_len']
         count = 0
-        while count < self.config['num_samples']:
-            base = 'xvf'  # minimum viable vehicle
-            gen_str = "".join(random.choices(symbols, weights=[self.config['frequency'][s] for s in symbols], k=random.choice(range(1, self.config['max_len'] - len(base) + 1))))
-            if self.is_valid(base + gen_str):
+
+        # track already created designs
+        generated = []
+
+        base = "wfwv"  # minimum viable vehicle -ø-
+        n = self.config_dict['num_samples']
+        pbar = tqdm(total=n)
+        while count < n:
+            gen_str = "".join(random.choices(list(self.config_dict['symbols'].keys()),
+                                             weights=list(self.config_dict['symbols'].values()),
+                                             k=random.choice(range(1, max_len - len(base) + 1))))
+            if self._is_valid(base + gen_str):
                 count += 1
-                yield base + gen_str
+                generated.append(base + gen_str)
+                pbar.update(1)
+                #yield base + gen_str
+        pbar.close()
+        return generated
 
-    # from the original generated population, apply mutations in config
-    def mutate(self):
-        # indices = [i for i, x in enumerate(my_list) if x == "whatever"]
-        pass
+    def gen(self):
+        #  add generated designs to a history
+        self.design_strings['generated'] = self._generate()
 
-    def expand(self):
-        pass
+    def get_generated_designs(self):
+        return list(self.design_strings['generated'])
 
-    # assign a score to the vehicle based on compactness/ space efficiency / height
+    def get_mutated_designs(self):
+        return list(self.design_strings['mutants'])
+
+    def _mutate(self):
+
+        use_horizontal = self.config_dict['horizontal_props']
+
+        #  todo add valid mutation check
+        def pick_prop():
+            return random.choice(['h', 'v'])
+
+        def pick_idx(lst):
+            return random.randint(0, len(lst))
+
+
+        #  todo move this with singular choice inside the for loop for each non-mutated design string
+        # muts = random.choices(list(self.config_dict['mutations'].keys()),
+        #                       weights=list(self.config_dict['mutations'].values()),
+        #                       k=self.config_dict['num_samples'])
+
+        def horizontal_present(cl):
+            return 'h' in cl if use_horizontal else False
+
+        def is_valid_mutation(ds, mut):
+            char_list = list(ds)
+            if mut == "pop_prop":
+                if char_list.count('v') < 2:
+                    return False
+                return True
+            elif mut == "pop_wing":
+                return not char_list.count('w') < 3
+            return True
+
+        mutated_designs = []
+
+        for idx in range(len(self.design_strings['generated'])):
+
+            design_to_mutate = self.design_strings['generated'][idx]
+
+            #  pick a valid mutation
+            mutation = random.choices(list(self.config_dict['mutations'].keys()),
+                                      weights=list(self.config_dict['mutations'].values()))[0]
+            while not is_valid_mutation(design_to_mutate, mutation):
+                mutation = random.choices(list(self.config_dict['mutations'].keys()),
+                                          weights=list(self.config_dict['mutations'].values()))[0]
+
+            char_list = list(design_to_mutate)
+
+            if mutation == "pop_prop":  # remove a v or h prop
+                assert char_list.count('v') > 1
+                if use_horizontal and horizontal_present(char_list):
+                    char_list.remove(pick_prop())
+                else:
+                    char_list.remove('v')
+
+            elif mutation == "push_prop":  # add a v or h prop in random loc
+                if use_horizontal:
+                    char_list.insert(pick_idx(char_list), pick_prop())
+                else:
+                    char_list.insert(pick_idx(char_list), 'v')
+
+            elif mutation == "pop_wing":  # remove a single wing
+                char_list.remove('w')
+
+            elif mutation == "push_wing":  # add a single wing
+                char_list.insert(pick_idx(char_list), 'w')
+
+            elif mutation == "flip_orient":
+                #  todo consider changing interpretation direction
+                char_list = char_list[:4] + char_list[3:][::-1]
+
+            res = "".join(char_list)
+            print(f"attempting mutation: [{mutation}] on design string: {design_to_mutate} --> {res}")
+            mutated_designs.append(res)
+        return mutated_designs
+
+    def mut(self):
+        self.design_strings['mutants'] = self._mutate()
+
+    #  assign a score to the vehicle based on compactness/ space efficiency / height
     def score(self):
         pass
 
+    # construct representative strings from the PI meeting
+    # submitted designs, and visualize these as baselines
+    def _view_seeds(self):
+        """
+        shovel -
+        sputnik -
+        bugger -
+        vudoo -
+        vanderfool -
+        joyride -
+        vunderkind -
+        """
+        pass
 
-if __name__ == "__main__":
-    sg = StringGrammar()
-    generator = sg.generate()
-    print(list(generator))
+    #  for each generated string apply labels to them so that
+    #  the same components have an integer label applied to them
+    #  e.g. "wfwvhh" --> "w1f1w2v1h1h2"
+    def label_generated(self):
+        #  todo add labels to generated components
+        for g in self.design_strings:
+            char_list = list(g)
+
+
+    #  from the labeled designs strings produce a connection graph
+    #  that is undirected
+    def create_graph_adjacency(self):
+        pass
+
+    #  augmen the existing adjacency matrix with connection angles
+    def add_connection_angles(self):
+        pass
+
+    #  filter generated designs by component count, length, etc
+    def filter(self):
+        pass
+
+    # todo write the storage object to json
+    def _save(self):
+        import time
+        fname = time.strftime("%Y%m%d-%H%M%S") + ".pkl"
+        fpath = os.path.join(self.save_dir, fname)
