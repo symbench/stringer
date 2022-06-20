@@ -35,14 +35,14 @@ class uavStringGrammar:
 	def __init__(self, length = 9, symmetrical = True, num_axes = 1, min_p = 0, min_h = 0, min_w = 0, min_wp = 2, min_f = 1, fuselage_base = False, p_bias= 0.2, h_bias= 0.3, w_bias = 0.1, wp_bias = 0.2, branch_coefficient = 0.3, grouping_coefficient = 0.4, multiaxial_symmetry = False, mean_group_size = 3, group_size_tolerance = 2):
 
 		self.grammar_params = {
-			"terminal_tokens" : ['p', 'h', 'w', 'w\'', 'f', 'b'],
-			"minimum_tokens" : {'p' : 0, 'h' : 0, 'w' : 0, 'w\'' : 2, 'f' : 1, 'b' : 0},
-			"simplified_group_tokens" : ['p', 'h' , 'w', "w'"],
-			"simplified_paren_tokens" : ['p', 'h'],
-			"token_biases" : [0.2, 0.3, 0.1, 0.2, 0, 0],
-			"non_terminal_tokens" : {'(' : ')', '[' : ']'},
-			"seed_groups" : ['[hh]', '[ww]', '[pp]', '(pppppppppppp)', '(hh)'],
-			"seed_clusters" : ['[hh][ww][pp]','[(pppppppppppp)(pppppppppppp)]','[(hh)(hh)]', '[(hh)w\'fw\'(hh)]']
+			"terminal_tokens": ['p', 'h', 'w', 'w\'', 'f', 'b'],
+			"minimum_tokens": {'p': 0, 'h': 0, 'w': 0, 'w\'': 2, 'f': 1, 'b': 0},
+			"simplified_group_tokens": ['p', 'h' , 'w', "w'"],
+			"simplified_paren_tokens": ['p', 'h'],
+			"token_biases": [0.2, 0.3, 0.1, 0.2, 0, 0],
+			"non_terminal_tokens": {'(': ')', '[': ']'},
+			"seed_groups": ['[hh]', '[ww]', '[pp]', '(pppppppppppp)', '(hh)'],
+			"seed_clusters": ['[hh][ww][pp]', '[(pppppppppppp)(pppppppppppp)]', '[(hh)(hh)]', '[(hh)w\'fw\'(hh)]']
 	}
 		# self.min_length = min_length if (min_length >= 3) else 3
 		# self.max_length = max_length if max_length > self.min_length else self.min_length
@@ -428,8 +428,8 @@ def orderTokens(tokens, in_bracket=True, endcap = False, branching_coefficient =
 	if in_bracket:
 		return_string = "[" + return_string + "]"
 
+	# print(f"return string is {return_string}")
 	return return_string
-
 
 
 
@@ -438,13 +438,14 @@ def selectTokens(valid_tokens, number, probs = None):
 	if not probs:
 		probs = [1 for x in list(valid_tokens.keys())]
 	for x in range(number):
-		valid_tokens[random.choices(list(valid_tokens.keys()), weights= probs,k=1)[0]] += 1
+		valid_tokens[random.choices(list(valid_tokens.keys()), weights=probs, k=1)[0]] += 1
 
-tokens = {'p' : 0, 'h' : 0, 'w' : 0, 'w\'' : 0}
-selectTokens(tokens, 30, [1,1,1,1])
-print(tokens)
-result = orderTokens(tokens)
-print(result)
+if __name__ == "__main__":
+	tokens = {'p': 0, 'h': 0, 'w': 0, 'w\'': 0}
+	selectTokens(tokens, 30, [1, 1, 1, 1])
+	print(tokens)
+	result = orderTokens(tokens)
+	print(result)
 
 
 
