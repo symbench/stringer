@@ -7,8 +7,6 @@ Grammar: EBNF
 <position-constrained-group> = [<inner-group>]
 <cluster> ::= {<cluster>}<position-constrained-group>{<cluster>} | {<cluster>}<inner-group>{<cluster>}
 <design> ::= {<cluster>}[w'fw']{<cluster>} | {<cluster>}[w'bw']{<cluster>}
-
-
 Rules (to be formalized):
 - h token terminates string on that side unless wrapped in () or connected to a wing
 - minimum 2 parallel wings + fueselage
@@ -16,16 +14,246 @@ Rules (to be formalized):
 - () necessitates branching from principal connector
 - num of p/h/f tokens inside [] cannot be greater than num axes unless two of the tokens are w', in which case all tokens past num axes are considered attached to w' symmetrically, or they are contained within ()
 - no w or w' inside ()
-
-
 Token ordering process:
 1. check for w'
 2.
-
 """
 
 import random
 import argparse
+
+def place_schema(tokens, s_type = "alternating", centerpiece = None):
+	return_string = ""
+	if centerpiece:
+		if not (s_type == 'stacked') and centerpiece == 'h':
+			return_string = '(h)'
+			tokens['h'] -= 1
+		if not (s_type == 'stacked') and centerpiece == 'p':
+			return_string = 'p'
+			tokens['p'] -= 1
+
+	if s_type == 'alternating':
+		while tokens['p'] + tokens['h'] > 1:
+			if tokens['p'] > 0:
+				return_string = 'p' + return_string + 'p'
+				tokens['p'] -= 2
+			if tokens['h'] > 0:
+				return_string = 'h' + return_string + 'h'
+				tokens['h'] -= 2
+	elif s_type == "grouped":
+		while tokens['h'] > 1:
+			return_string = 'h' + return_string + 'h'
+			tokens['h'] -= 2
+		while tokens['p']:
+			return_string = 'p' + return_string + 'p'
+			tokens['p'] -= 2
+	elif s_type == "stacked":
+		num_branches = random.choice([1,2])
+		if tokens['h'] >= tokens['p'] and tokens['p'] > 0:
+			if num_branches == 2:
+				branch_size = tokens['h']//2
+				if tokens['p'] % 2 ==1:
+					top_branch = "p"
+					tokens['p'] -= 1
+					while tokens['p'] > 1:
+						top_branch = 'p' + top_branch + 'p'
+						tokens['p'] -= 2
+					top_branch = '(' + top_branch + ')'
+					bottom_branch = ""
+					if tokens['h'] % 2 == 1:
+						bottom_branch = "h"
+					while tokens['h'] > branch_size:
+						bottom_branch = 'h' + bottom_branch + 'h'
+						tokens['h'] -= 2
+					bottom_branch = '(' + bottom_branch + ')'
+					main_branch = ""
+					while tokens['h'] > 1:
+						main_branch = 'h' + main_branch + 'h'
+						tokens['h'] -= 2
+				else:
+					top_branch = ""
+					while tokens['h'] > branch_size:
+						top_branch = 'h' + top_branch + 'h'
+						tokens['h'] -= 2
+					top_branch = '(' + top_branch + ')'
+					bottom_branch = ""
+					while tokens['h'] > 1:
+						bottom_branch = 'h' + bottom_branch + 'h'
+						tokens['h'] -= 2
+					bottom_branch = '(' + bottom_branch + ')'
+					main_branch = ""
+					while tokens['p'] > 1:
+						main_branch = 'p' + main_branch + 'p'
+						tokens['p'] -= 2
+				if bottom_branch == "()":
+					return_string = top_branch + main_branch
+				return_string = top_branch + main_branch + bottom_branch
+			else:
+				top_branch = ""
+				if tokens['p'] % 2 ==1:
+					top_branch = "p"
+					tokens['p'] -= 1
+				while tokens['p'] > 1:
+					top_branch = 'p' + top_branch + 'p'
+					tokens['p'] -= 2
+				top_branch = '(' + top_branch + ')'
+				main_branch = ""
+				if tokens['h'] % 2 == 1:
+					main_branch = "h"
+					tokens['h'] -= 1
+
+				while tokens['h'] > 1:
+					main_branch = 'h' + main_branch + 'h'
+					tokens['h'] -= 2
+				return_string = top_branch + main_branch
+			
+		elif tokens['p'] > tokens['h'] and tokens['h'] > 0:
+			
+			if num_branches == 2:
+				branch_size = tokens['p']//2
+				top_branch = ""
+				if tokens['p'] % 2 == 1:
+					top_branch = "p"
+					tokens['p'] -= 1
+				while tokens['p'] > branch_size:
+					top_branch = 'p' + top_branch + 'p'
+					tokens['p'] -= 2
+				top_branch = '(' + top_branch + ')'
+				bottom_branch = ""
+				if tokens['h'] % 2 == 1:
+					bottom_branch = "h"
+					tokens['h'] -= 1
+					while tokens['h'] > 1:
+						bottom_branch = 'h' + bottom_branch + 'h'
+						tokens['h'] -= 2
+					main_branch = ""
+					while tokens['p'] > 1:
+						main_branch = 'p' + main_branch + 'p'
+						tokens['p'] -= 2
+				else:
+					while tokens['p'] > 1:
+						bottom_branch = 'p' + bottom_branch + 'p'
+						tokens['p'] -= 2
+					bottom_branch = '(' + bottom_branch + ')'
+					main_branch = ""
+					if tokens['h'] % 2 == 1:
+						main_branch = "h"
+						tokens['h'] -= 1
+					while tokens['h'] > 1:
+						main_branch = 'h' + main_branch + 'h'
+						tokens['h'] -= 2
+				if bottom_branch == "()":
+					return_string = top_branch + main_branch		
+				return_string = top_branch + main_branch + bottom_branch
+			else:
+				top_branch = ""
+				if tokens['p'] % 2 ==1:
+					top_branch = "p"
+					tokens['p'] -= 1
+				while tokens['p'] > 1:
+					top_branch = 'p' + top_branch + 'p'
+					tokens['p'] -= 2
+				top_branch = '(' + top_branch + ')'
+				main_branch = ""
+				if tokens['h'] % 2 == 1:
+					main_branch = "h"
+					tokens['h'] -= 1
+				while tokens['h'] > 1:
+					main_branch = 'h' + main_branch + 'h'
+					tokens['h'] -= 2
+				return_string = top_branch + main_branch
+		elif tokens['h'] > 0 and tokens['p'] <= 0:
+			if num_branches == 2:
+				branch_size = tokens //3
+				top_branch = ""
+				if tokens['h'] % 2 == 1:
+					top_branch = "h"
+					tokens['h'] -= 1
+				while tokens['h'] > branch_size * 2:
+					top_branch = 'h' + top_branch + 'h'
+					tokens['h'] -= 2
+				top_branch = '(' + top_branch + ')'
+				bottom_branch = ""
+				while tokens['h'] >  branch_size:
+					bottom_branch = 'h' + bottom_branch + 'h'
+					tokens['h'] -= 2
+				bottom_branch = '(' + bottom_branch + ')'
+				main_branch = ""
+				while tokens['h'] > 1:
+					main_branch = 'h' + main_branch + 'h'
+					tokens['h'] -= 2
+				return_string = top_branch + main_branch + bottom_branch
+			else:
+				branch_size = tokens['p'] // 2
+				top_branch = ""
+				if tokens['h'] % 2 ==1:
+					top_branch = "h"
+					tokens['h'] -= 1
+				while tokens['h'] > branch_size:
+					top_branch = 'h' + top_branch + 'h'
+					tokens['h'] -= 2
+				top_branch = '(' + top_branch + ')'
+				main_branch = ""
+				if tokens['h'] % 2 == 1:
+					main_branch = "h"
+					tokens['h'] -= 1
+				while tokens['h'] > 1:
+					main_branch = 'h' + main_branch + 'h'
+					tokens['h'] -= 2
+				return_string = top_branch + main_branch
+		elif tokens['p'] > 0 and tokens['h'] <= 0:
+			if num_branches == 2:
+				branch_size = tokens['p'] //3
+				top_branch = ""
+				if tokens['p'] % 2 == 1:
+					top_branch = "p"
+					tokens['p'] -= 1
+				while tokens['p'] > branch_size * 2:
+					top_branch = 'p' + top_branch + 'p'
+					tokens['p'] -= 2
+				top_branch = '(' + top_branch + ')'
+				bottom_branch = ""
+				if branch_size % 2 == 1:
+					bottom_branch = "p"
+					tokens['p'] -= 1
+				while tokens['p'] >  branch_size:
+					bottom_branch = 'p' + bottom_branch + 'p'
+					tokens['p'] -= 2
+				bottom_branch = '(' + bottom_branch + ')'
+				main_branch = ""
+				while tokens['p'] > 1:
+					main_branch = 'p' + main_branch + 'p'
+					tokens['p'] -= 2
+				return_string = top_branch + main_branch + bottom_branch
+			else:
+				branch_size = tokens['p'] // 2
+				top_branch = ""
+				if tokens['p'] % 2 ==1:
+					top_branch = "p"
+					tokens['p'] -= 1
+				while tokens['p'] > branch_size:
+					top_branch = 'p' + top_branch + 'p'
+					tokens['p'] -= 2
+				top_branch = '(' + top_branch + ')'
+				main_branch = ""
+				while tokens['p'] > 1:
+					main_branch = 'p' + main_branch + 'p'
+					tokens['p'] -= 2
+				return_string = top_branch + main_branch
+	# print(s_type)
+	if s_type == "stacked":
+		# print(num_branches)
+		pass
+	return return_string
+
+
+
+
+
+
+
+
+
 
 
 class uavStringGrammar:
@@ -78,365 +306,99 @@ class uavStringGrammar:
 
 # 	else:
 
+def order_tokens(tokens, fuselage = False, cluster_type = 'multiple'):
+	return_string = ""
+	if fuselage:
+		return_string = "f"
+	if cluster_type == 'single':
+		if tokens["w"] > 0:
+			return_string = "w"
+		elif tokens['p'] == 0:
+			return_string = "p"
+		else:
+			return_string = "(h)"
+	else:
+		if tokens["w'"] > 0:
+			if tokens["w'"] > 2:
+				#Cap w' at 4 for now
+				if fuselage:
+					if tokens['w']:
+						while tokens['w'] > 0:
+							return_string = 'w' + return_string
+							tokens['w'] -= 1
+							if  tokens['w'] > 0:
+								return_string = return_string + 'w'
+								tokens['w'] -= 1
+				tokens["w'"] = 4
+				while tokens["w'"] > 0:
+					return_string = "w'" + return_string + "w'"
+					tokens["w'"] -= 2
+			else:
+				if fuselage:
+					if tokens['w'] > 0:
+						while tokens['w'] > 0:
+								return_string = 'w' + return_string
+								tokens['w'] -= 1
+								if  tokens['w'] > 0:
+									return_string = return_string + 'w'
+									tokens['w'] -= 1
+					elif tokens['p'] == 1:
+						return_string = "w'p" + return_string + "w'"
+						tokens["w'"] -= 2
+						tokens['p'] -= 1
+					elif tokens['p'] > 1:
+						return_string = "w'" + return_string + "w'"
+						tokens["w'"] -= 2
+						while tokens['p'] > 1:
+							return_string = 'p' + return_string + 'p'
+							tokens['p'] -= 2
+					elif tokens['h'] > 1 :
+						return_string = "w'" + return_string + "w'"
+						tokens["w'"] -= 2
+						while tokens['h'] > 1:
+							return_string = 'h' + return_string + 'h'
+							tokens['h'] -= 2
+				else:
+					if tokens['w'] > 0:
+						return_string = "w'w" + return_string + "w'"
+						tokens['w'] -= 1
+						tokens["w'"] -= 2
+					elif tokens['p'] > 1:
+						return_string = "w'" + return_string + "w'"
+						tokens["w'"] -= 2
+						while tokens['p'] > 1:
+							return_string = 'p' + return_string + 'p'
+							tokens['p'] -= 2
+					elif tokens['h'] > 1 :
+						return_string = "w'" + return_string + "w'"
+						while tokens['h'] > 1:
+							return_string = 'h' + return_string + 'h'
+							tokens['h'] -= 2
+					else:
+						return_string = "w'" + return_string + "w'"
+						tokens["w'"] -= 2
 
-def orderTokens(tokens, in_bracket=True, endcap=False, contains_fuselage = False, branching_coefficient=50):
-    return_string = ''
-    if contains_fuselage:
-        endcap = True
-        return_string = "f"
-        tokens["w'"] = 2
+		elif tokens['w'] > 0:
+			if tokens['w'] > 3:
+				tokens['w'] = 3
+			while tokens['w']:
+				return_string = 'w' + return_string
+				tokens['w'] -= 1
+				if tokens['w']:
+					return_string = return_string + 'w'
+					tokens['w'] -= 1
+		else:
+			schema = random.choice(['stacked','alternating','grouped'])
+			if tokens['p'] % 2 == 1 and tokens['h'] % 2 == 0:
+				return_string = place_schema(tokens, s_type = schema, centerpiece = 'p')
+			elif tokens['h'] % 2 == 1 and tokens['p'] % 2 == 0:
+				return_string = place_schema(tokens, s_type = schema, centerpiece = 'h')
+			else:
+				return_string = place_schema(tokens, s_type = schema)
+	if return_string == "" : 
+		print(tokens)
+	return '[' + return_string + ']'
 
-    if tokens["h"] == 1:
-        # One horizontal propeller
-        if tokens["w'"] > 0:
-            # There are parallel wings
-            if tokens['p'] % 2 == 1:
-                # If there are an odd number of vertical propellers, one must be in the center
-                if endcap:
-                    # If there is only 1 horizontal propeller AND we are at the end
-                    # of the generation, h could either cap the principal axis or
-                    # be on a branch.
-                    if random.randint(0, 100) < branching_coefficient:
-                        return_string = return_string + "(hp)"
-                    else:
-                        return_string = return_string + "hp"
-                    for x in range(tokens["w'"] // 2):
-                        return_string = "w'" + return_string + "w'"
-                    # [hphwwhph] (h)p(hh)p(h)
-                    for x in range(tokens["p"] // 2):
-                        return_string = "p" + return_string + "p"
-                # [(pp)w'hpw'(pp)] [ppw'hpw'pp]
-                else:
-                    # If this is not at the endcap, must have a separate connector
-                    return_string = return_string + "(hp)"
-                    for x in range(tokens["w'"] // 2):
-                        return_string = "w'" + return_string + "w'"
-                    for x in range(tokens["p"] // 2):
-                        return_string = "p" + return_string + "p"
-            else:
-                # number of vertical propellers is even
-                if endcap:
-                    # If there is only 1 horizontal propeller AND we are at the end
-                    # of the generation, h could either cap the principal axis or
-                    # be on a branch.
-                    if random.randint(0, 100) < branching_coefficient:
-                        return_string = return_string + "(h)"
-                    else:
-                        return_string = return_string + "h"
-                    for x in range(tokens["w'"] // 2):
-                        return_string = "w'" + return_string + "w'"
-                    for x in range(tokens["p"] // 2):
-                        return_string = "p" + return_string + "p"
-                else:
-                    # If this is not at the endcap, must have a separate connector
-                    return_string = return_string + "(hp)"
-                    for x in range(tokens["w'"] // 2):
-                        return_string = "w'" + return_string + "w'"
-                    for x in range(tokens["p"] // 2):
-                        return_string = "p" + return_string + "p"
-        else:
-            # there are no parallel wings
-            if tokens['w'] > 0:
-                # there are non-parallel wings
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    if endcap:
-                        # If there is only 1 horizontal propeller AND we are at the end
-                        # of the generation, h could either cap the principal axis or
-                        # be on a branch.
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(hp)"
-                        else:
-                            return_string = return_string + "hp"
-                        for x in range(tokens["w"] // 2):
-                            return_string = "w" + return_string + "w"
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                    else:
-                        # If this is not at the endcap, must have a separate connector
-                        return_string = return_string + "(hp)"
-                        for x in range(tokens["w"] // 2):
-                            return_string = "w" + return_string + "w"
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                else:
-                    # number of vertical propellers is even
-                    if endcap:
-                        # If there is only 1 horizontal propeller AND we are at the end
-                        # of the generation, h could either cap the principal axis or
-                        # be on a branch.
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(h)"
-                        else:
-                            return_string = return_string + "h"
-                        for x in range(tokens["w'"] // 2):
-                            return_string = "w'" + return_string + "w'"
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                    else:
-                        # If this is not at the endcap, must have a separate connector
-                        return_string = return_string + "(h)"
-                        for x in range(tokens["w'"] // 2):
-                            return_string = "w'" + return_string + "w'"
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-            else:
-                # no wings of any sort
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    if endcap:
-                        # If there is only 1 horizontal propeller AND we are at the end
-                        # of the generation, h could either cap the principal axis or
-                        # be on a branch.
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(hp)"
-                        else:
-                            return_string = return_string + "hp"
-                        if tokens['p'] > 1:
-                            for x in range(tokens["p"] // 2):
-                                return_string = "p" + return_string + "p"
-                            return_string = "(" + return_string + ")"
-                    else:
-                        # If this is not at the endcap, must have a separate connector
-                        return_string = return_string + "(hp)"
-                        if tokens['p'] > 1:
-                            for x in range(tokens["p"] // 2):
-                                return_string = "p" + return_string + "p"
-                            return_string = "(" + return_string + ")"
-                else:
-                    # number of vertical propellers is even
-                    if endcap:
-                        # If there is only 1 horizontal propeller AND we are at the end
-                        # of the generation, h could either cap the principal axis or
-                        # be on a branch.
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(h)"
-                        else:
-                            return_string = return_string + "h"
-                        if tokens['p'] > 1:
-                            for x in range(tokens["p"] // 2):
-                                return_string = "p" + return_string + "p"
-                            return_string = "(" + return_string + ")"
-                    else:
-                        # If this is not at the endcap, must have a separate connector
-                        return_string = return_string + "(h)"
-                        if tokens['p'] > 1:
-                            for x in range(tokens["p"] // 2):
-                                return_string = "p" + return_string + "p"
-                            return_string = "(" + return_string + ")"
-
-    elif tokens["h"] == 0:
-        # no horizontal propellers
-        if tokens["w'"] > 0:
-            # There are parallel wings
-            if tokens['p'] % 2 == 1:
-                # If there are an odd number of vertical propellers, one must be in the center
-                if random.randint(0, 100) < branching_coefficient:
-                    return_string = return_string + "(p)"
-                else:
-                    return_string = return_string + "p"
-                for x in range(tokens["w'"] // 2):
-                    return_string = "w'" + return_string + "w'"
-                # [hphwwhph] (h)p(hh)p(h)
-                for x in range(tokens["p"] // 2):
-                    return_string = "p" + return_string + "p"
-
-            else:
-                # number of vertical propellers is even
-                for x in range(tokens["w'"] // 2):
-                    return_string = "w'" + return_string + "w'"
-                for x in range(tokens["p"] // 2):
-                    return_string = "p" + return_string + "p"
-        else:
-            # there are no parallel wings
-            if tokens['w'] > 0:
-                # there are non-parallel wings
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    if random.randint(0, 100) < branching_coefficient:
-                        return_string = return_string + "(p)"
-                    else:
-                        return_string = return_string + "p"
-                    for x in range(tokens["w"] // 2):
-                        return_string = "w" + return_string + "w"
-                    for x in range(tokens["p"] // 2):
-                        return_string = "p" + return_string + "p"
-                else:
-                    # number of vertical propellers is even
-                    for x in range(tokens["w'"] // 2):
-                        return_string = "w'" + return_string + "w'"
-                    for x in range(tokens["p"] // 2):
-                        return_string = "p" + return_string + "p"
-
-            else:
-                # no wings of any sort
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    # TODO: consider removing this optional branching as it can lead to (pp(p)pp), may not make sense
-                    if random.randint(0, 100) < branching_coefficient:
-                        return_string = return_string + "(p)"
-                    else:
-                        return_string = return_string + "p"
-                    if tokens['p'] > 1:
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                        return_string = "(" + return_string + ")"
-                else:
-                    # number of vertical propellers is even
-                    if tokens['p'] > 1:
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                        return_string = "(" + return_string + ")"
-
-    elif tokens["h"] % 2 == 0:
-        # number of horizontal propellers is even
-        if tokens["w'"] > 0:
-            # There are parallel wings
-            if tokens['p'] % 2 == 1:
-                # If there are an odd number of vertical propellers, one must be in the center
-                if random.randint(0, 100) < branching_coefficient:
-                    return_string = return_string + "(p)"
-                else:
-                    return_string = return_string + "p"
-
-            # number of vertical propellers is even
-            for x in range(tokens["w'"] // 2):
-                return_string = "w'" + return_string + "w'"
-            for x in range(tokens["p"] // 2):
-                return_string = "p" + return_string + "p"
-            for x in range(tokens["h"] // 2):
-                return_string = "h" + return_string + "h"
-        else:
-            # there are no parallel wings
-            if tokens['w'] > 0:
-                # there are non-parallel wings
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    if random.randint(0, 100) < branching_coefficient:
-                        return_string = return_string + "(p)"
-                    else:
-                        return_string = return_string + "p"
-                # number of vertical propellers is even
-                for x in range(tokens["w'"] // 2):
-                    return_string = "w'" + return_string + "w'"
-                for x in range(tokens["p"] // 2):
-                    return_string = "p" + return_string + "p"
-                for x in range(tokens["h"] // 2):
-                    return_string = "h" + return_string + "h"
-
-            else:
-                # no wings of any sort
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    if random.randint(0, 100) < branching_coefficient:
-                        return_string = return_string + "(p)"
-                    else:
-                        return_string = return_string + "p"
-                    if tokens['p'] > 1:
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                else:
-                    # number of vertical propellers is even
-                    if tokens['p'] > 1:
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                if tokens['h'] > 1:
-                    for x in range(tokens["h"] // 2):
-                        return_string = "h" + return_string + "h"
-                    return_string = "(" + return_string + ")"
-    elif tokens["h"] % 2 == 1:
-        # number of horizontal propellers is odd
-        if tokens["w'"] > 0:
-            # There are parallel wings
-            if tokens['p'] % 2 == 1:
-                # If there are an odd number of vertical propellers, one must be in the center
-                if random.randint(0, 100) < branching_coefficient:
-                    return_string = return_string + "(hp)"
-                else:
-                    return_string = return_string + "hp"
-
-            # number of vertical propellers is even
-            for x in range(tokens["w'"] // 2):
-                return_string = "w'" + return_string + "w'"
-            for x in range(tokens["p"] // 2):
-                return_string = "p" + return_string + "p"
-            for x in range(tokens["h"] // 2):
-                return_string = "h" + return_string + "h"
-        else:
-            # there are no parallel wings
-            if tokens['w'] > 0:
-                # there are non-parallel wings
-                if tokens['p'] % 2 == 1:
-                    # If there are an odd number of vertical propellers, one must be in the center
-                    if endcap:
-                        # If there are an odd number of vertical propellers, one must be in the center
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(hp)"
-                        else:
-                            return_string = return_string + "hp"
-                    else:
-                        # not at the endcap, requires a branch
-                        return_string = return_string + "(hp)"
-                # number of vertical propellers is even
-                else:
-                    if endcap:
-                        # If there are an odd number of vertical propellers, one must be in the center
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(h)"
-                        else:
-                            return_string = return_string + "h"
-                    else:
-                        # not at the endcap, requires a branch
-                        return_string = return_string + "(h)"
-                for x in range(tokens["w'"] // 2):
-                    return_string = "w'" + return_string + "w'"
-                for x in range(tokens["p"] // 2):
-                    return_string = "p" + return_string + "p"
-                for x in range(tokens["h"] // 2):
-                    return_string = "h" + return_string + "h"
-
-            else:
-                # no wings of any sort
-                if tokens['p'] % 2 == 1:
-                    if endcap:
-                        # If there are an odd number of vertical propellers, one must be in the center
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(hp)"
-                        else:
-                            return_string = return_string + "hp"
-                    else:
-                        # not at the endcap, requires a branch
-                        return_string = return_string + "(hp)"
-                    if tokens['p'] > 1:
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                        return_string = "(" + return_string + ")"
-                else:
-                    # number of vertical propellers is even
-                    if endcap:
-                        # If there are an odd number of vertical propellers, one must be in the center
-                        if random.randint(0, 100) < branching_coefficient:
-                            return_string = return_string + "(h)"
-                        else:
-                            return_string = return_string + "h"
-                    else:
-                        # not at the endcap, requires a branch
-                        return_string = return_string + "(h)"
-                    if tokens['p'] > 1:
-                        for x in range(tokens["p"] // 2):
-                            return_string = "p" + return_string + "p"
-                        return_string = "(" + return_string + ")"
-                if tokens['h'] > 1:
-                    for x in range(tokens["h"] // 2):
-                        return_string = "h" + return_string + "h"
-                    if not return_string[0] == "(":
-                        return_string = "(" + return_string + ")"
-
-    if in_bracket or tokens['w'] > 1 or tokens["w'"] > 1:
-        # inside positional constraint
-        return_string = "[" + return_string + "]"
-
-    return return_string
 
 
 def selectTokens(valid_tokens, number, probs=None):
@@ -469,17 +431,20 @@ def run():
     for i in range(args.designs):
         tokens = {'p': 0, 'h': 0, 'w': 0, 'w\'': 0}
         selectTokens(tokens, random.randint(args.cluster_range[0],args.cluster_range[1]), args.token_dist)
-        design = orderTokens(tokens, contains_fuselage=True)
+        # schema = place_schema(tokens, s_type = "stacked")
+        # print(schema)
+        tokens["w'"] += 2 if tokens["w'"] == 0 else 0
+        design = order_tokens(tokens, fuselage=True)
         j = 1
         while j < args.clusters:
             selectTokens(tokens, random.randint(args.cluster_range[0], args.cluster_range[1]), args.token_dist)
-            design = orderTokens(tokens) + design
+            design = order_tokens(tokens) + design
             j += 1
             if j < args.clusters:
 
                 selectTokens(tokens, random.randint(args.cluster_range[0], args.cluster_range[1]),
                             args.token_dist)
-                cluster = orderTokens(tokens)
+                cluster = order_tokens(tokens)
                 design = design + cluster
                 j += 1
 
@@ -492,6 +457,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-
-
