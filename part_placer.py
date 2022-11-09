@@ -8,7 +8,8 @@ import random
 part_dimensions = {"f":{"x_width":5, "y_height":5, "z_depth":5},
 					"w": {"x_width":20, "y_height":2, "z_depth":5},
 					"p": {"x_width":2, "y_height":2.5, "z_depth":2},
-					"h": {"x_width":2, "y_height":2, "z_depth":2.5}}
+					"h": {"x_width":2, "y_height":2, "z_depth":2.5},
+					"cg": {"x_width":5, "y_height":5, "z_depth":5}}
 					# "non_parallel_wing": {"x_width":14.85, "y_height":14.85, "z_depth":5}}
 					# """bounding box formula for non-parallel wings:
 					# 	x_width = cos(theta)*length + sin(theta)*thickness
@@ -17,6 +18,7 @@ part_dimensions = {"f":{"x_width":5, "y_height":5, "z_depth":5},
 
 def custom_encoder(design):
 	output_string = '[\n  {\n  "connections": [\n  '
+
 	for key in design.parts.keys():
 		connections = design.parts[key].connections
 		pid = design.parts[key].pid
@@ -29,50 +31,115 @@ def custom_encoder(design):
 					if dest_connections[dest_key] == pid:
 						if not output_string[-1] == ' ':
 							output_string += ",\n"
-						if pid[0] in ['p', 'h']:
-							motor = 'm' + pid[1:]
-							motor_port = 'Base_Connector' 
-							output_string += '{{'\
-							'"connector1": "{}",\n'\
-							'"connector2": "{}",\n'\
-							'"instance1": "{}",\n'\
-							'"instance2": "{}"\n'\
-							'}},'.format(motor_port, dest_key, motor, dest)
-							motor_port = 'Prop_Connector' 
-							output_string += '{{'\
-							'"connector1": "{}",\n'\
-							'"connector2": "{}",\n'\
-							'"instance1": "{}",\n'\
-							'"instance2": "{}"\n'\
-							'}},'.format('MOTOR_CONNECTOR_CS_IN', motor_port, pid, motor)
-							output_string += '{{'\
-							'"connector1": "{}",\n'\
-							'"connector2": "{}",\n'\
-							'"instance1": "{}",\n'\
-							'"instance2": "{}"\n'\
-							'}}'.format(motor_port, 'MOTOR_CONNECTOR_CS_IN',motor , pid)
-						elif dest[0] in ['p', 'h']:
-							motor = 'm' + pid[1:]
-							motor_port = 'Base_Connector' 
-							output_string += '{{'\
-							'"connector1": "{}",\n'\
-							'"connector2": "{}",\n'\
-							'"instance1": "{}",\n'\
-							'"instance2": "{}"\n'\
-							'}},'.format(conn_key, motor_port, pid, motor)
-							motor_port = 'Prop_Connector' 
-							output_string += '{{'\
-							'"connector1": "{}",\n'\
-							'"connector2": "{}",\n'\
-							'"instance1": "{}",\n'\
-							'"instance2": "{}"\n'\
-							'}},'.format('MOTOR_CONNECTOR_CS_IN', motor_port, pid, motor)
-							output_string += '{{'\
-							'"connector1": "{}",\n'\
-							'"connector2": "{}",\n'\
-							'"instance1": "{}",\n'\
-							'"instance2": "{}"\n'\
-							'}}'.format(motor_port, 'MOTOR_CONNECTOR_CS_IN',motor , pid)
+						if design.parts[key].part_type in ['p', 'h']:
+							output_string = output_string[:-2]
+							# if design.uav:
+							# 	motor = 'm' + pid[1:]
+							# 	motor_port = 'Base_Connector' 
+							# 	flange = 'fl' + pid[1:]
+							# 	prop_tube = 'pt' + pid[1:]
+							# 	output_string += '{{'\
+							# 	'"connector1": "{}",\n'\
+							# 	'"connector2": "{}",\n'\
+							# 	'"instance1": "{}",\n'\
+							# 	'"instance2": "{}"\n'\
+							# 	'}},'.format(motor_port, dest_key, motor, dest)
+							# 	motor_port = 'Prop_Connector' 
+							# 	output_string += '{{'\
+							# 	'"connector1": "{}",\n'\
+							# 	'"connector2": "{}",\n'\
+							# 	'"instance1": "{}",\n'\
+							# 	'"instance2": "{}"\n'\
+							# 	'}},'.format('MOTOR_CONNECTOR_CS_IN', motor_port, pid, motor)
+							# 	output_string += '{{'\
+							# 	'"connector1": "{}",\n'\
+							# 	'"connector2": "{}",\n'\
+							# 	'"instance1": "{}",\n'\
+							# 	'"instance2": "{}"\n'\
+							# 	'}}'.format(motor_port, 'MOTOR_CONNECTOR_CS_IN',motor , pid)
+							# else:
+							# 	motor = 'm' + pid[1:]
+							# 	motor_port = 'Base_Connector' 
+							# 	output_string += '{{'\
+							# 	'"connector1": "{}",\n'\
+							# 	'"connector2": "{}",\n'\
+							# 	'"instance1": "{}",\n'\
+							# 	'"instance2": "{}"\n'\
+							# 	'}},'.format(motor_port, dest_key, motor, dest)
+							# 	motor_port = 'Prop_Connector' 
+							# 	output_string += '{{'\
+							# 	'"connector1": "{}",\n'\
+							# 	'"connector2": "{}",\n'\
+							# 	'"instance1": "{}",\n'\
+							# 	'"instance2": "{}"\n'\
+							# 	'}},'.format('MOTOR_CONNECTOR_CS_IN', motor_port, pid, motor)
+							# 	output_string += '{{'\
+							# 	'"connector1": "{}",\n'\
+							# 	'"connector2": "{}",\n'\
+							# 	'"instance1": "{}",\n'\
+							# 	'"instance2": "{}"\n'\
+							# 	'}}'.format(motor_port, 'MOTOR_CONNECTOR_CS_IN',motor , pid)
+						elif design.parts[dest].part_type in ['p', 'h']:
+							if design.uav:
+								motor = 'm' + pid[1:]
+								motor_anchor_port = 'Base_Connector' 
+								motor_propeller_port = 'Prop_Connector' 
+								flange = 'fl' + pid[1:]
+								flange_anchor_port = 'BottomConnector'
+								flange_motor_port = "TopConnector"
+								prop_tube = 'pt' + pid[1:]
+								output_string += '{{'\
+								'"connector1": "{}",\n'\
+								'"connector2": "{}",\n'\
+								'"instance1": "{}",\n'\
+								'"instance2": "{}"\n'\
+								'}},'.format(conn_key, flange_anchor_port, pid, flange) 
+								output_string += '{{'\
+								'"connector1": "{}",\n'\
+								'"connector2": "{}",\n'\
+								'"instance1": "{}",\n'\
+								'"instance2": "{}"\n'\
+								'}},'.format(flange_motor_port, "BaseConnection", flange, prop_tube)
+								output_string += '{{'\
+								'"connector1": "{}",\n'\
+								'"connector2": "{}",\n'\
+								'"instance1": "{}",\n'\
+								'"instance2": "{}"\n'\
+								'}},'.format("EndConnection", motor_anchor_port, prop_tube, motor) 
+								# output_string += '{{'\
+								# '"connector1": "{}",\n'\
+								# '"connector2": "{}",\n'\
+								# '"instance1": "{}",\n'\
+								# '"instance2": "{}"\n'\
+								# '}},'.format('MOTOR_CONNECTOR_CS_IN', motor_propeller_port, pid, motor)
+								output_string += '{{'\
+								'"connector1": "{}",\n'\
+								'"connector2": "{}",\n'\
+								'"instance1": "{}",\n'\
+								'"instance2": "{}"\n'\
+								'}}'.format(motor_propeller_port, 'MOTOR_CONNECTOR_CS_IN',motor , pid)
+							else:
+								motor = 'm' + pid[1:]
+								motor_port = 'Base_Connector' 
+								output_string += '{{'\
+								'"connector1": "{}",\n'\
+								'"connector2": "{}",\n'\
+								'"instance1": "{}",\n'\
+								'"instance2": "{}"\n'\
+								'}},'.format(conn_key, motor_port, pid, motor)
+								motor_port = 'Prop_Connector' 
+								# output_string += '{{'\
+								# '"connector1": "{}",\n'\
+								# '"connector2": "{}",\n'\
+								# '"instance1": "{}",\n'\
+								# '"instance2": "{}"\n'\
+								# '}},'.format('MOTOR_CONNECTOR_CS_IN', motor_port, pid, motor)
+								output_string += '{{'\
+								'"connector1": "{}",\n'\
+								'"connector2": "{}",\n'\
+								'"instance1": "{}",\n'\
+								'"instance2": "{}"\n'\
+								'}}'.format(motor_port, 'MOTOR_CONNECTOR_CS_IN',motor , pid)
 
 						else:
 							output_string += '{{'\
@@ -98,6 +165,16 @@ def custom_encoder(design):
 			'"model" : "{}",\n'\
 			'"name": "{}"\n'\
 			'}},'.format('MAGiDRIVE150','m' + design.parts[key].pid[1:])
+			output_string += '{{\n'\
+			'"assignment": {{}},\n'\
+			'"model" : "{}",\n'\
+			'"name": "{}"\n'\
+			'}},'.format('0394_para_flange','f' + design.parts[key].pid[1:])
+			output_string += '{{\n'\
+			'"assignment": {{}},\n'\
+			'"model" : "{}",\n'\
+			'"name": "{}"\n'\
+			'}},'.format('0394OD_para_tube','pt' + design.parts[key].pid[1:])
 		if design.parts[key].part_type == 'w':
 			model_name = "naca_wing"
 			output_string += '{{\n'\
@@ -133,7 +210,10 @@ def custom_encoder(design):
 			'"name": "{}"\n'\
 			'}}'.format(model_name,design.parts[key].pid)
 		elif design.parts[key].part_type == 'c':
-			model_name = "PORTED_CYL"
+			if design.uav:
+				model_name = "0394od_para_hub_4"
+			else:
+				model_name = "PORTED_CYL"
 			output_string += '{{\n'\
 			'"assignment": {{\n'\
 			'"DIAMETER": "CylinderDiameter",\n'\
@@ -261,20 +341,32 @@ class part():
 	def add_connection(self, src, dst):
 		self.connections[src] = dst
 
-	def toJSON(self):
-		return json.dumps(self, default=lambda o: o.pid, 
-			sort_keys=True, indent=4)
 
 class connector(part):
-	def __init__(self, pid, centroid = [0,0,0], buffer_connector = False):
+	def __init__(self, pid, centroid = [0,0,0], buffer_connector = False, uav = False, hub_type = 'main'):
 		part.__init__(self, pid, part_type = 'c')
 		self.centroid = centroid
 		self.buffer_connector = buffer_connector
-		self.connections = {'front': None, 'rear' : None, 'top': None, 'bottom': None, 'left': None, 'right': None}
+		if not uav:
+			self.connections = {'front': None, 'rear' : None, 'top': None, 'bottom': None, 'left': None, 'right': None}
+		else:
+			if hub_type == 'main':
+				self.connections = {'front': None, 'rear' : None, 'top': None, 'left': None, 'right': None}
+			elif hub_type == 'buffer':
+				self.connections = {'front': None, 'rear' : None, 'top': None, 'bottom': None}
+			elif hub_type == 'part':
+				self.connections = {'front': None, 'rear' : None, 'top': None, 'bottom': None, 'right': None}
+			elif hub_type == 'fuselage':
+				self.connections = {'front': None, 'rear' : None, 'top': None, 'bottom': None, 'left': None, 'right': None}
 
-	def toJSON(self):
-		return '{"pid":' + json.dumps(self, default=lambda o: o.pid, 
-			sort_keys=True, indent=4) + '}'
+
+class tube(part):
+	def __init__(self, pid, centroid = [0,0,0]):
+		part.__init__(self, pid, part_type = 't')
+		# self.centroid = centroid
+		# self.buffer_connector = buffer_connector
+		self.connections = {'front': None, 'rear' : None}
+
 
 #Cluster class for string segments. May not be necessary
 #TODO: change this class to consider individual parts and separate connector groups as tokens
@@ -287,11 +379,13 @@ class cluster:
 #Design class for holding and calculating everything relevant to the design's part placement including
 #bounding boxes, parts, clusters and the functions for parsing and placing those items
 class design:
-	def __init__(self, parts = {}, bounding_boxes = [], clusters = []):
+	def __init__(self, parts = {}, bounding_boxes = [], clusters = [], uav = False):
 		self.bounding_boxes = bounding_boxes
 		self.parts = parts
 		self.connector_id_count = 0
+		self.tube_id_count = 0
 		self.part_id_count = 0
+		self.uav = uav
 		self.initial_connector = connector("c" + str(self.connector_id_count))
 		self.add_part(self.initial_connector)
 		self.connector_id_count += 1
@@ -310,7 +404,7 @@ class design:
 					return True
 		return False
 
-	#Simoltaneously check for conflicts and add new bounding box
+	#Simultaneously check for conflicts and add new bounding box
 	def add_bounding_box(self, new_box):
 		for bounding_box1 in self.bounding_boxes:
 			for bounding_box2 in self.bounding_boxes:
@@ -321,13 +415,30 @@ class design:
 
 	#Add a part, calls bounding box check
 	def add_part(self, part):
-		if not part.part_type == 'c':
+		if not part.part_type in ['c','t']:
 			if self.add_bounding_box(part.bounding_box):
 				self.parts[part.pid] = part
 			else:
 				print("Collision detected, failed to add part")
+				print("PID:" + part.pid)
 		else:
 			self.parts[part.pid] = part
+
+	def make_connection(self, src_pid, src_conn, dst_pid, dst_conn):
+		# If we are using UAV style connections, utilize a tube to connect the two parts
+		if self.uav:
+			connecting_tube = tube(pid = 't' + str(self.tube_id_count))
+			self.tube_id_count += 1
+			self.parts[src_pid].connections[src_conn] = connecting_tube.pid
+			connecting_tube.connections["BaseConnection"] = src_pid
+			self.parts[dst_pid].connections[dst_conn] = connecting_tube.pid
+			connecting_tube.connections["EndConnection"] = dst_pid
+			self.add_part(connecting_tube)
+		# If we are using UAM, simply connect the two parts
+		else:
+			self.parts[src_pid].connections[src_conn] = dst_pid
+			self.parts[dst_pid].connections[dst_conn] = src_pid
+
 
 	def print_parts_and_centroids(self):
 		for key in self.parts.keys():
@@ -467,7 +578,7 @@ class design:
 				cutting_roof = subcluster_end + 1 if subcluster_end == len(tokens)-1 else subcluster_end + 1
 
 				tokens = tokens[:subcluster_start] + tokens[subcluster_end+1:]
-				schema = 'even' if (subcluster_count % 2 == 0) else 'odd'
+				# schema = 'even' if (subcluster_count % 2 == 0) else 'odd'
 			else:
 
 				i += 1
@@ -530,78 +641,115 @@ class design:
 			fuselage_dimensions = part_dimensions['f']
 			fuselage_id = 'f' + str(self.part_id_count)
 			self.part_id_count += 1
-			new_part = part(fuselage_id ,centroid=cursor, part_type='f', x_width=fuselage_dimensions["x_width"], y_height=fuselage_dimensions["y_height"], z_depth=fuselage_dimensions["z_depth"])
-			self.add_part(new_part)
+			
 
-			# Track min and max z for incrementation (this will be repeated without comment)
-			z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
+			# differentiate uav/uam style interpretation
+			if not self.uav:
+				new_part = part(fuselage_id ,centroid=cursor, part_type='f', x_width=fuselage_dimensions["x_width"], y_height=fuselage_dimensions["y_height"], z_depth=fuselage_dimensions["z_depth"])
+				self.add_part(new_part)
+				# Track min and max z for incrementation (this will be repeated without comment)
+				z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
+				# connect single initial connector to front fuselage, and connect rear of connector to front of fuselage
+				self.frontmost_connector.connections["rear"] = fuselage_id
+				self.parts[fuselage_id].connections['front'] = self.frontmost_connector.pid
 
-			# connect single initial connector to front fuselage, and connect rear of connector to front of fuselage
-			self.frontmost_connector.connections["rear"] = fuselage_id
-			self.parts[fuselage_id].connections['front'] = self.frontmost_connector.pid
+				# create rear connector, connect front of rear connector to rear of fuselage
+				new_connector = connector('c' + str(self.connector_id_count))
+				new_connector.connections["front"] = fuselage_id
+				self.parts[fuselage_id].connections['rear'] = new_connector.pid
+				self.connector_id_count += 1
+				self.rearmost_connector = new_connector
+				self.add_part(new_connector)
 
-			# create rear connector, connect front of rear connector to rear of fuselage
-			new_connector = connector('c' + str(self.connector_id_count))
-			new_connector.connections["front"] = fuselage_id
-			self.parts[fuselage_id].connections['rear'] = new_connector.pid
-			self.connector_id_count += 1
-			self.rearmost_connector = new_connector
-			self.add_part(new_connector)
+			else:
+				temp_cursor = [x for x in cursor]
+				base_hub = connector('c' + str(self.connector_id_count), cursor, uav = True, hub_type = 'fuselage')
+				self.add_part(base_hub)
+				temp_cursor[1] += fuselage_dimensions["y_height"]/2
+				fuselage = part(fuselage_id ,centroid=temp_cursor, part_type='f', x_width=fuselage_dimensions["x_width"], y_height=fuselage_dimensions["y_height"], z_depth=fuselage_dimensions["z_depth"])
+				self.add_part(fuselage)
+				temp_cursor[1] -= fuselage_dimensions["y_height"]/2
+				cargo_dimensions = part_dimensions['cg']
+				temp_cursor[1] -= cargo_dimensions["y_height"]/2
+				cargo = part('cg' + str(self.part_id_count), centroid = temp_cursor, part_type = 'cg', x_width=cargo_dimensions["x_width"], y_height=cargo_dimensions["y_height"], z_depth=cargo_dimensions["z_depth"])
+				self.add_part(cargo)
+				self.make_connection(base_hub.pid, 'top', fuselage.pid, 'bottom')
+				self.make_connection(base_hub.pid, 'bottom', cargo.pid, 'top')
+				self.frontmost_connector = base_hub
+				self.rearmost_connector = base_hub
+
+
+
 
 			# If there are two wings
 			if w_count == 2:
+				if not self.uav:
 
-				# Create temporary cursor for placing parts. Start on left wing, moving cursor by fuselage/2
-				temp_cursor = [cursor[0] - fuselage_dimensions["x_width"]/2, cursor[1], cursor[2]]
+					# Create temporary cursor for placing parts. Start on left wing, moving cursor by fuselage/2
+					temp_cursor = [cursor[0] - fuselage_dimensions["x_width"]/2, cursor[1], cursor[2]]
 
-				# Grab dimensions of the wing and move cursor to new wing centroic
-				dimensions = part_dimensions['w']
-				temp_cursor[0] -= dimensions["x_width"]/2
+					# Grab dimensions of the wing and move cursor to new wing centroic
+					dimensions = part_dimensions['w']
+					temp_cursor[0] -= dimensions["x_width"]/2
 
-				# Create new part id and create new wing, place at current temp cursor location
-				new_id = 'w' + str(self.part_id_count)
-				self.part_id_count += 1
-				new_part = part(new_id, centroid = [temp_cursor[0],temp_cursor[1],temp_cursor[2]], part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
-
-				# Connect wing to fuselage and add part
-				new_part.connections["naca"] = fuselage_id
-				self.parts[fuselage_id].connections['naca1'] = new_part.pid
-				self.add_part(new_part)
-				z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
-
-				# Move cursor to other side of fuselage + half of wing width to reach centroid
-				temp_cursor = [temp_cursor[0] + dimensions['x_width'], temp_cursor[1], temp_cursor[2]]
-				temp_cursor[0] += dimensions['x_width']
-				temp_cursor[0] += fuselage_dimensions['x_width']
-
-				# Create new part id and create new wing, place at current temp cursor location
-				new_id = 'w' + str(self.part_id_count)
-				new_part = part(new_id, centroid = [temp_cursor[0],temp_cursor[1],temp_cursor[2]], part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
-				self.part_id_count += 1
-
-				# Connect wing to fuselage and add part
-				new_part.connections["naca"] = fuselage_id
-				self.parts[fuselage_id].connections['naca2'] = new_part.pid
-				self.add_part(new_part)
-				z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
-
-				# Add propeller on top of fuselage, if specified
-				if 'p' in tokens:
-					# Create temporary cursor for placing parts. Start on top of fuselage
-					temp_cursor[1] += fuselage_dimensions["y_height"]/2
-
-					# Grab dimensions for vertical propeller, move cursor to centroid
-					dimensions = part_dimensions['p']
-					temp_cursor[1] += direction["y_height"]/2
-
-					# Create new part and add to design, set connections
-					new_id = 'p' + str(self.part_id_count)
+					# Create new part id and create new wing, place at current temp cursor location
+					new_id = 'w' + str(self.part_id_count)
 					self.part_id_count += 1
-					new_part = part(new_id, centroid = temp_cursor, part_type = 'p', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
-					new_part.connections["baseplate"] = fuselage_id
-					self.parts[fuselage_id].connections['top'] = new_part.pid
+					new_part = part(new_id, centroid = [temp_cursor[0],temp_cursor[1],temp_cursor[2]], part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+
+					# Connect wing to fuselage and add part
+					new_part.connections["naca"] = fuselage_id
+					self.parts[fuselage_id].connections['naca1'] = new_part.pid
 					self.add_part(new_part)
 					z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
+
+					# Move cursor to other side of fuselage + half of wing width to reach centroid
+					temp_cursor = [temp_cursor[0] + dimensions['x_width'], temp_cursor[1], temp_cursor[2]]
+					temp_cursor[0] += dimensions['x_width']
+					temp_cursor[0] += fuselage_dimensions['x_width']
+
+					# Create new part id and create new wing, place at current temp cursor location
+					new_id = 'w' + str(self.part_id_count)
+					new_part = part(new_id, centroid = [temp_cursor[0],temp_cursor[1],temp_cursor[2]], part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+					self.part_id_count += 1
+
+					# Connect wing to fuselage and add part
+					new_part.connections["naca"] = fuselage_id
+					self.parts[fuselage_id].connections['naca2'] = new_part.pid
+					self.add_part(new_part)
+					z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
+
+					# Add propeller on top of fuselage, if specified
+					if 'p' in tokens:
+						# Create temporary cursor for placing parts. Start on top of fuselage
+						temp_cursor[1] += fuselage_dimensions["y_height"]/2
+
+						# Grab dimensions for vertical propeller, move cursor to centroid
+						dimensions = part_dimensions['p']
+						temp_cursor[1] += direction["y_height"]/2
+
+						# Create new part and add to design, set connections
+						new_id = 'p' + str(self.part_id_count)
+						self.part_id_count += 1
+						new_part = part(new_id, centroid = temp_cursor, part_type = 'p', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+						new_part.connections["baseplate"] = fuselage_id
+						self.parts[fuselage_id].connections['top'] = new_part.pid
+						self.add_part(new_part)
+						z_min, z_max = self.z_bound_check(new_part, z_min, z_max)
+				else:
+					temp_cursor = [x for x in cursor]
+					dimensions = part_dimensions['w']
+					temp_cursor[0] -= dimensions['x_width'] * 2
+					new_wing = part('w' + str(self.part_id_count), part_type = 'w', centroid= temp_cursor,  x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+					self.part_id_count += 1
+					self.add_part(new_wing)
+					self.make_connection(new_wing.pid, "tube_connector", base_hub.pid, "left")
+					temp_cursor[0] += dimensions['x_width']
+					new_wing = part('w' + str(self.part_id_count), centroid = temp_cursor, part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+					self.part_id_count += 1
+					self.add_part(new_wing)
+					self.make_connection(new_wing.pid, "tube_connector", base_hub.pid, "right")
+
 
 			# If there are 4 wings and a fuselage
 			if w_count == 4:
@@ -686,16 +834,17 @@ class design:
 			# TODO: fix issue with utilizing f + non w
 			base_connector = connector('c' + str(self.connector_id_count))
 			self.connector_id_count += 1
+			self.add_part(base_connector)
+			
 			origin_connector.connections[direction] = base_connector.pid
 			if direction == 'front':
-				base_connector.connections["right"] = origin_connector.pid
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "right")
 			else:
-				base_connector.connections["left"] = origin_connector.pid
-			self.add_part(base_connector)
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "left")
+			
 			leftmost_connector = base_connector
 			rightmost_connector = base_connector
 
-			# print("i is" + str(i))
 			i = 0
 
 			while i < len(tokens):
@@ -717,11 +866,10 @@ class design:
 					temp_cursor = leftmost
 
 					#Connect the base to the base connector (different for horizontal and vertical)
-					new_part.connections["baseplate"] = base_connector.pid
 					if new_part.part_type == 'h':
-						base_connector.connections['right'] = new_part.pid
+						self.make_connection(new_part.pid, "baseplate", base_connector.pid, "right")
 					else:
-						base_connector.connections['top'] = new_part.pid
+						self.make_connection(new_part.pid, "baseplate", base_connector.pid, "top")
 
 					# Increment the offset
 					offset += 1
@@ -735,18 +883,21 @@ class design:
 
 					# Add a buffer connector
 					buffer_connector = connector('bc' + str(self.connector_id_count),centroid = temp_cursor, buffer_connector = True)
-
+					self.add_part(buffer_connector)
 					if alternator == -1:
 
 						# Attach buffer connecter, create and attach new connector to hold part
-						buffer_connector.connections['rear'] = leftmost_connector.pid
-						leftmost_connector.connections['front'] = buffer_connector.pid
+						# buffer_connector.connections['rear'] = leftmost_connector.pid
+						# leftmost_connector.connections['front'] = buffer_connector.pid
+						self.make_connection(leftmost_connector.pid, 'front', buffer_connector.pid, 'rear')
 						self.connector_id_count += 1
 						new_connector = connector('c' + str(self.connector_id_count))
 						self.connector_id_count += 1
+						self.add_part(new_connector)
 						buffer_connector.connections['front'] = new_connector.pid
 						new_connector.connections['rear'] = buffer_connector.pid
-						self.add_part(new_connector)
+						self.make_connection(new_connector.pid, 'rear', buffer_connector.pid, 'front')
+						
 
 						# Update leftmost position and connector
 						leftmost = [temp_cursor[0] - dimensions["x_width"]/2, temp_cursor[1], temp_cursor[2]]
@@ -757,11 +908,14 @@ class design:
 						# Attach buffer connecter, create and attach new connector to hold part
 						buffer_connector.connections['front'] = rightmost_connector.pid
 						rightmost_connector.connections['rear'] = buffer_connector.pid
+						self.make_connection(rightmost_connector.pid, 'rear', buffer_connector.pid, 'front')
 						self.connector_id_count += 1
 						new_connector = connector('c' + str(self.connector_id_count))
 						self.connector_id_count += 1
-						buffer_connector.connections['rear'] = new_connector.pid
-						new_connector.connections['front'] = buffer_connector.pid
+						self.add_part(new_connector)
+						# buffer_connector.connections['rear'] = new_connector.pid
+						# new_connector.connections['front'] = buffer_connector.pid
+						self.make_connection(new_connector.pid, 'front', buffer_connector.pid, 'rear')
 						
 
 						# Update rightmost position and connector
@@ -770,15 +924,18 @@ class design:
 						temp_cursor = [x for x in leftmost]
 						offset += 1
 					# Attach part and new connector
-					new_part.connections['baseplate'] = new_connector.pid
-					if new_part.part_type == 'h':
-						new_connector.connections[direction] = new_part.pid
-					else:
-						new_connector.connections['top'] = new_part.pid
-					# self.print_parts_and_centroids()
-					self.add_part(buffer_connector)
-					self.add_part(new_connector)
 					self.add_part(new_part)
+					# new_part.connections['baseplate'] = new_connector.pid
+					if new_part.part_type == 'h':
+						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, direction)
+						# new_connector.connections[direction] = new_part.pid
+					else:
+						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'top')
+						# new_connector.connections['top'] = new_part.pid
+					# self.print_parts_and_centroids()
+					# self.add_part(buffer_connector)
+					# self.add_part(new_connector)
+					
 					alternator *= -1
 				if dimensions["z_depth"] > z_max:
 					z_max = dimensions["z_depth"]
@@ -1012,8 +1169,7 @@ class design:
 if __name__ == '__main__':
 
 	new_clusters = []
-
-	# [['h','p','h'],['w','f','w'],['h','p','h']]
+	# 
 	# [['h','p','h'],['w','f','w'],['p'],['(','h','h',')']]
 	#['(', 'p', 'p', ')','(', 'p', 'p', ')','(', 'p', 'p', ')']
 
@@ -1023,8 +1179,9 @@ if __name__ == '__main__':
 	#['(', 'p', 'p', ')','p','p','p','(', 'p', 'p', ')']]
 	#['(', 'p', 'p', ')', 'h', '(', 'p', 'p',')' ]
 	#['h','p','h'],['w','f','w'],['h','p','h']
-	clusters = [['(', 'p', 'p', ')', 'h', 'h', '(', 'p', 'p',')' ],['w','f','w'],['(', 'p', 'p', ')', 'h', 'h','(', 'p', 'p',')' ]]
-	new_design = design(clusters = clusters)
+	# [['(', 'p', 'p', ')', 'h', 'h', '(', 'p', 'p',')' ],['w','f','w'],['(', 'p', 'p', ')', 'h', 'h','(', 'p', 'p',')' ]]
+	clusters = [['h','p','h'],['w','f','w'],['h','p','h']]
+	new_design = design(clusters = clusters, uav = True)
 	new_design.place_all_parts()
 	output = custom_encoder(new_design)
 	output_file = open("generated_design.txt", 'w')
