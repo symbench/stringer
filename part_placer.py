@@ -27,70 +27,92 @@ def parse_clusters(text):
 
 def custom_encoder(design, design_num, remove_boilerplate = True):
 	output_string = '[\n  {\n  "connections": [\n  '
-	parameters = [("Front_Rail_Length", "80"),
-	("Front_Wing_Tube_Length", "55"),
-	("FwdFacingCCW_PropType", "-1"),
-	("FwdFacingCCW_Spin", "1"),
-	("FwdFacingCW_Spin", "1"),
-	("Mid_Tube_Length", "140"),
-	("NACA_profile", "0012"),
-	("Param_11", "180"),
-	("Param_12", "90"),
-	("Param_14", "448.68"),
-	("Rear_Rail_Length", "220"),
-	("Rudder_Tube_Length", "41"),
-	("Top_Leg_Tube_Length", "150.1524"),
-	("Vertical_Tube_Length", "150"),
-	("angle_270", "270"),
-	("front_l_wing_offset", "289.68"),
-	("front_r_wing_offset", "160.32"),
-	("front_wing_chord", "150"),
-	("front_wing_span", "450"),
-	("fuse_floor", "20"),
-	("fuse_height", "105"),
-	("fuse_width", "80"),
-	("l_rudder_offset", "90"),
-	("r_rudder_offset", "50"),
-	("rear_wing_chord", "180"),
-	("rear_wing_offset", "90"),
-	("rear_wing_span", "609"),
-	("rudder_chord", "100"),
-	("rudder_span", "140"),
-	("wing_thickness", "12")]
+	parameters = [
+	# ("Front_Rail_Length", "80"),
+	# ("Front_Wing_Tube_Length", "55"),
+	# ("FwdFacingCCW_PropType", "-1"),
+	# ("FwdFacingCCW_Spin", "1"),
+	# ("FwdFacingCW_Spin", "1"),
+	# ("Mid_Tube_Length", "140"),
+	# ("NACA_profile", "0012"),
+	# ("Param_11", "180"),
+	# ("Param_12", "90"),
+	# ("Param_14", "448.68"),
+	# ("Rear_Rail_Length", "220"),
+	# ("Rudder_Tube_Length", "41"),
+	# ("Top_Leg_Tube_Length", "150.1524"),
+	# ("Vertical_Tube_Length", "150"),
+	# ("angle_270", "270"),
+	# ("front_l_wing_offset", "289.68"),
+	# ("front_r_wing_offset", "160.32"),
+	# ("front_wing_chord", "150"),
+	# ("front_wing_span", "450"),
+	("fuse_floor", "20", False),
+	("Orient_Z_ANGLE", "90", False),
+	("fuse_height", "105",False),
+	("fuse_width", "80",False),
+	("l_rudder_offset", "90",False),
+	("r_rudder_offset", "50",False),
+	("rear_wing_chord", "180",False),
+	("rear_wing_offset", "90",False),
+	("rear_wing_span", "609",False),
+	("rudder_chord", "100",False),
+	("rudder_span", "140",False),
+	("wing_thickness", "12",False)]
 
 	type_parameters = {
-	'p' : [("Direction", "UpFacingCCW_Spin", False), ("Prop_type", "UpFacingCCW_PropType", False)],
-	'h' : [("Direction", "FwdFacingCCW_Spin", False), ("Prop_type", "FwdFacingCCW_PropType", False)],
-	'w' : [("AILERON_BIAS","AILERON_BIAS", False ),  ("CHORD_1", "wing_chord", True),("CHORD_2", "wing_chord", True), ("CONTROL_CHANNEL", "CONTROL_CHANNEL", False),
-	("FLAP_BIAS", "FLAP_BIAS", False),("LOAD", "LOAD", False), ("NACA_Profile", "NACA_Profile", False),("SERVO_LENGTH", "SERVO_LENGTH", False),
-	("SERVO_THICKNESS", "SERVO_THICKNESS", False),("SERVO_WIDTH", "SERVO_WIDTH", False), ("SPAN", "SPAN", False), ("TAPER_OFFSET", "TAPER_OFFSET", False),
-	("THICKNESS", "THICKNESS", False),("TUBE_DIAMETER", "TUBE_DIAMETER", False),("TUBE_OFFSET", "TUBE_OFFSET", False), ("TUBE_ROTATION", "TUBE_ROTATION", False)],
-	'l': [("AILERON_BIAS","AILERON_BIAS", False ),  ("CHORD_1", "wing_chord", True),("CHORD_2", "wing_chord", True), ("CONTROL_CHANNEL", "CONTROL_CHANNEL", False),
-	("FLAP_BIAS", "FLAP_BIAS", False),("LOAD", "LOAD", False), ("NACA_Profile", "NACA_Profile", False),("SERVO_LENGTH", "SERVO_LENGTH", False),
-	("SERVO_THICKNESS", "SERVO_THICKNESS", False),("SERVO_WIDTH", "SERVO_WIDTH", False), ("SPAN", "SPAN", False), ("TAPER_OFFSET", "TAPER_OFFSET", False),
-	("THICKNESS", "THICKNESS", False),("TUBE_DIAMETER", "TUBE_DIAMETER", False),("TUBE_OFFSET", "TUBE_OFFSET", False), ("TUBE_ROTATION", "TUBE_ROTATION", False)],
-	't' : [("BASE_ROT", "BASE_ROT", False),("END_ROT", "END_ROT", False),("Length", "Length", False),("Offset1", "Offset1", False),("Offset2Offset2", "Offset2", False)],
-	'pt' : [("BASE_ROT", "BASE_ROT", False),("END_ROT", "END_ROT", False),("Length", "Length", False),("Offset1", "Offset1", False),("Offset2Offset2", "Offset2", False)],
-	'bc' : [("ANGHORZCONN", "ANGHORZCONN", False),("ANGVERTCONN", "ANGVERTCONN", False),("DIAMETER", "DIAMETER", False)],
-	'c' : [("ANGHORZCONN", "ANGHORZCONN", False),("ANGVERTCONN", "ANGVERTCONN", False),("DIAMETER", "DIAMETER", False)],
-	'fl' : [("BodyRotAngle", "BodyRotAngle", False),("BOTTOM_ANGLE", "BOTTOM_ANGLE", False),("SIDE_ANGLE", "SIDE_ANGLE", False)],
-	'm' : [("CONTROL_CHANNEL", "CONTROL_CHANNEL", False)]
+	'p' : [("Direction", "Direction", False, "-1"), ("Prop_type", "Prop_type", False, "1")],
+	'h' : [("Direction", "Direction", False, "-1"), ("Prop_type", "Prop_type", False, "1")],
+	'w' : [("AILERON_BIAS","AILERON_BIAS", False, "0.5" ),  ("CHORD_1", "wing_chord", True, "150"),("CHORD_2", "wing_chord", True, "150"), ("CONTROL_CHANNEL", "CONTROL_CHANNEL", False, "1"),
+	("FLAP_BIAS", "FLAP_BIAS", False, "0.5"),("LOAD", "LOAD", False, "30"), ("NACA_Profile", "NACA_Profile", False, "0012"),("SERVO_LENGTH", "SERVO_LENGTH", False, "0.1"),
+	("SERVO_THICKNESS", "SERVO_THICKNESS", False, "0.1"),("SERVO_WIDTH", "SERVO_WIDTH", False, "0.1"), ("SPAN", "SPAN", False, "1200"), ("TAPER_OFFSET", "TAPER_OFFSET", False, "0"),
+	("THICKNESS", "THICKNESS", False, "12"),("TUBE_DIAMETER", "TUBE_DIAMETER", False, "7.1474"),("TUBE_OFFSET", "TUBE_OFFSET", False, "600"), ("TUBE_ROTATION", "TUBE_ROTATION", False, "180")],
+	'l': [("AILERON_BIAS","AILERON_BIAS", False, "0.5" ),  ("CHORD_1", "wing_chord", True, "150"),("CHORD_2", "wing_chord", True, "150"), ("CONTROL_CHANNEL", "CONTROL_CHANNEL", False, "1"),
+	("FLAP_BIAS", "FLAP_BIAS", False, "0.5"),("LOAD", "LOAD", False, "30"), ("NACA_Profile", "NACA_Profile", False, "0012"),("SERVO_LENGTH", "SERVO_LENGTH", False, "0.1"),
+	("SERVO_THICKNESS", "SERVO_THICKNESS", False, "0.1"),("SERVO_WIDTH", "SERVO_WIDTH", False, "0.1"), ("SPAN", "SPAN", False, "1200"), ("TAPER_OFFSET", "TAPER_OFFSET", False, "0"),
+	("THICKNESS", "THICKNESS", False, "12"),("TUBE_DIAMETER", "TUBE_DIAMETER", False, "7.1474"),("TUBE_OFFSET", "TUBE_OFFSET", False, "600"), ("TUBE_ROTATION", "TUBE_ROTATION", False, "180")],
+	't' : [("BASE_ROT", "BASE_ROT", False, "0"),("END_ROT", "END_ROT", False, "0"),("Length", "Length", False, "100"),("Offset1", "Offset1", False, "0"),("Offset2Offset2", "Offset2", False, "0")],
+	'pt' : [("BASE_ROT", "BASE_ROT", False, "0"),("END_ROT", "END_ROT", False, "0"),("Length", "Length", False, "100"),("Offset1", "Offset1", False, "0"),("Offset2Offset2", "Offset2", False, "0")],
+	'bc' : [("ANGHORZCONN", "ANGHORZCONN", False, "90"),("ANGVERTCONN", "ANGVERTCONN", False, "0"),("DIAMETER", "DIAMETER", False, "7.1474")],
+	'c' : [("ANGHORZCONN", "ANGHORZCONN", False, "90"),("ANGVERTCONN", "ANGVERTCONN", False, "0"),("DIAMETER", "DIAMETER", False, "7.1474")],
+	'fl' : [("BOTTOM_ANGLE", "BOTTOM_ANGLE", False, "0"),("SIDE_ANGLE", "SIDE_ANGLE", False, "0")],
+	'm' : [("CONTROL_CHANNEL", "CONTROL_CHANNEL", False)],
+	'f' : [("BOTTOM_CONNECTOR_OFFSET_LENGTH","BOTTOM_CONNECTOR_OFFSET_LENGTH", False, "0" ),  ("BOTTOM_CONNECTOR_OFFSET_WIDTH", "BOTTOM_CONNECTOR_OFFSET_WIDTH", False, "0"),("BOTTOM_CONNECTOR_ROTATION", "BOTTOM_CONNECTOR_ROTATION", True, "0"), 
+	("BOTTOM_CONNECTOR_ROTATION", "BOTTOM_CONNECTOR_ROTATION", False, "0"),
+	("FLOOR_CONNECTOR_1_DISP_WIDTH", "FLOOR_CONNECTOR_1_DISP_WIDTH", False, "30"),("FLOOR_CONNECTOR_2_DISP_LENGTH", "FLOOR_CONNECTOR_2_DISP_LENGTH", False, "0"), ("FLOOR_CONNECTOR_2_DISP_WIDTH", "FLOOR_CONNECTOR_2_DISP_WIDTH", False, "-30"),("FLOOR_CONNECTOR_3_DISP_LENGTH", "FLOOR_CONNECTOR_3_DISP_LENGTH", False, "-160"),
+	("FLOOR_CONNECTOR_3_DISP_WIDTH", "FLOOR_CONNECTOR_3_DISP_WIDTH", False, "13"),("FLOOR_CONNECTOR_4_DISP_LENGTH", "FLOOR_CONNECTOR_4_DISP_LENGTH", False, "-160"), ("FLOOR_CONNECTOR_4_DISP_WIDTH", "FLOOR_CONNECTOR_4_DISP_WIDTH", False, "-18"), ("FLOOR_CONNECTOR_5_DISP_LENGTH", "FLOOR_CONNECTOR_5_DISP_LENGTH", False, "115"),
+	("FLOOR_CONNECTOR_5_DISP_WIDTH", "FLOOR_CONNECTOR_5_DISP_WIDTH", False, "0"),("FLOOR_CONNECTOR_6_DISP_LENGTH", "FLOOR_CONNECTOR_6_DISP_LENGTH", False, "155"),("FLOOR_CONNECTOR_6_DISP_WIDTH", "FLOOR_CONNECTOR_6_DISP_WIDTH", False, "18"), ("FLOOR_CONNECTOR_7_DISP_LENGTH", "FLOOR_CONNECTOR_7_DISP_LENGTH", False, "-120"),
+	("FLOOR_CONNECTOR_7_DISP_WIDTH", "FLOOR_CONNECTOR_7_DISP_WIDTH", False, "0"),("FLOOR_CONNECTOR_8_DISP_LENGTH", "FLOOR_CONNECTOR_8_DISP_LENGTH", False, "155"),("FLOOR_CONNECTOR_8_DISP_WIDTH", "FLOOR_CONNECTOR_8_DISP_WIDTH", False, "-18"), ("FLOOR_HEIGHT", "FLOOR_HEIGHT", False, "20"),
+	("FUSE_CYL_LENGTH", "FUSE_CYL_LENGTH", False, "270"),("HORZ_DIAMETER", "HORZ_DIAMETER", False, "190"),("VERT_DIAMETER", "VERT_DIAMETER", False, "125")],
+	'cg' : [("Rotation", "Rotation", False, "0")]
 	}
+
+	default_value_dict = {}
+
+	for key in type_parameters.keys():
+		for param in type_parameters[key]:
+			# print(param)
+			if len(param) >= 4:
+				default_value_dict[param[1]] = param[3]
+
+	# print(default_value_dict)
 
 	uav_type_models = {
 	'm' : 'kde_direct_KDE2315XF_885', 'fl' : '0394_para_flange', 't' : '0394OD_para_tube',
-	'w' : 'wing_vert_hole', 'l': 'wing_vert_hole', 'p' : 'apc_propellers_7x5E','h' : 'apc_propellers_7x5E', 'c' : '0394od_para_hub_4',
+	'w' : 'Wing_horiz_hole', 'l': 'Wing_horiz_hole', 'p' : 'apc_propellers_7x5E','h' : 'apc_propellers_7x5E', 'c' : '0394od_para_hub_4',
 	'f' : 'capsule_fuselage', 'cg' : 'CargoCase'
 	}
 
 	def generate_instance_params(pid, part_type):
 		return_string = ''
 		return_parameters = []
-		print(part_type)
+		# print(part_type)
 		for param in type_parameters[part_type]:
+			# print(param)
+			# print(part_type)
 			value = param[1] if param[2] else pid + '_' + param[1]
 			return_string += '"{}" : "{}",\n'.format(param[0], value)
-			return_parameters.append((value, value))
+			return_parameters.append((value, value, param[2]))
 		return_string = return_string[:-2]
 		return_string += "\n"
 
@@ -137,25 +159,25 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 								'"connector2": "{}",\n'\
 								'"instance1": "{}",\n'\
 								'"instance2": "{}"\n'\
-								'}},'.format(flange_motor_port, "BaseConnection", flange, prop_tube)
+								'}},'.format(flange_motor_port, motor_anchor_port, flange, motor)
 								output_string += '{{'\
 								'"connector1": "{}",\n'\
 								'"connector2": "{}",\n'\
 								'"instance1": "{}",\n'\
 								'"instance2": "{}"\n'\
-								'}},'.format("BaseConnection", flange_motor_port, prop_tube, flange)
-								output_string += '{{'\
-								'"connector1": "{}",\n'\
-								'"connector2": "{}",\n'\
-								'"instance1": "{}",\n'\
-								'"instance2": "{}"\n'\
-								'}},'.format("EndConnection", motor_anchor_port, prop_tube, motor)
-								output_string += '{{'\
-								'"connector1": "{}",\n'\
-								'"connector2": "{}",\n'\
-								'"instance1": "{}",\n'\
-								'"instance2": "{}"\n'\
-								'}},'.format(motor_anchor_port, "EndConnection", motor, prop_tube) 
+								'}},'.format(motor_anchor_port, flange_motor_port, motor, flange)
+								# output_string += '{{'\
+								# '"connector1": "{}",\n'\
+								# '"connector2": "{}",\n'\
+								# '"instance1": "{}",\n'\
+								# '"instance2": "{}"\n'\
+								# '}},'.format("EndConnection", motor_anchor_port, prop_tube, motor)
+								# output_string += '{{'\
+								# '"connector1": "{}",\n'\
+								# '"connector2": "{}",\n'\
+								# '"instance1": "{}",\n'\
+								# '"instance2": "{}"\n'\
+								# '}},'.format(motor_anchor_port, "EndConnection", motor, prop_tube) 
 								# output_string += '{{'\
 								# '"connector1": "{}",\n'\
 								# '"connector2": "{}",\n'\
@@ -207,7 +229,7 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 						else:
 							connector_port = conn_key
 							dest_port = dest_key
-							uav_conversions = {'left': 'SideConnector_1', 'front': 'SideConnector_2', 'right': 'SideConnector_3', 'rear': 'SideConnector_4', 'top': 'Top_Connector', 'bottom': 'Bottom_Connector'}
+							uav_conversions = {'left': 'Side_Connector_3', 'front': 'Side_Connector_2', 'right': 'Side_Connector_1', 'rear': 'Side_Connector_4', 'top': 'Top_Connector', 'bottom': 'Bottom_Connector'}
 							part_type = design.parts[pid].part_type
 							if part_type == 'c':
 								connector_port = uav_conversions[conn_key]
@@ -305,15 +327,15 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 				'}},'.format(flange_model,'fl' + design.parts[key].pid[1:])
 
 				#Add prop tube
-				output_string += '{\n'\
-				'"assignment": {\n'
-				param_string, new_params = generate_instance_params('pt' + key[1:], 'pt')
-				output_string += param_string
-				parameters.extend(new_params)
-				output_string += '}},\n'\
-				'"model" : "{}",\n'\
-				'"name": "{}"\n'\
-				'}},'.format(tube_model,'pt' + design.parts[key].pid[1:])
+				# output_string += '{\n'\
+				# '"assignment": {\n'
+				# param_string, new_params = generate_instance_params('pt' + key[1:], 'pt')
+				# output_string += param_string
+				# parameters.extend(new_params)
+				# output_string += '}},\n'\
+				# '"model" : "{}",\n'\
+				# '"name": "{}"\n'\
+				# '}},'.format(tube_model,'pt' + design.parts[key].pid[1:])
 
 				output_string += '{\n'\
 				'"assignment": {\n'
@@ -326,82 +348,82 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 				'}},'.format(motor_model_name,'m' + design.parts[key].pid[1:])
 
 
-		if design.parts[key].part_type == 'f':
-			model_name = 'capsule_fuselage' if design.uav else "FUSE_SPHERE_CYL_CONE"
-			if design.uav:
-				output_string += '{{\n'\
-				'"assignment": {{\n'\
-				'"FLOOR_HEIGHT": "FuselageFloorHeight",\n'\
-				'"LENGTH": "FuselageLength",\n'\
-				'"MIDDLE_LENGTH": "FuselageMiddleLength",\n'\
-				'"PORT_THICKNESS": "FuselagePortThickness",\n'\
-				'"SEAT_1_FB": "FuselageSeatFB",\n'\
-				'"SEAT_1_LR": "FuselageSeat1LR",\n'\
-				'"SEAT_2_FB": "FuselageSeatFB",\n'\
-				'"SEAT_2_LR": "FuselageSeat2LR",\n'\
-				'"SPHERE_DIAMETER": "FuselageSphereDiameter",\n'\
-				'"BOTTOM_CONNECTOR_OFFSET_LENGTH": "fuselage_BOTTOM_CONNECTOR_OFFSET_LENGTH",\n'\
-				'"BOTTOM_CONNECTOR_OFFSET_WIDTH": "fuselage_BOTTOM_CONNECTOR_OFFSET_WIDTH",\n'\
-				'"BOTTOM_CONNECTOR_ROTATION": "fuselage_BOTTOM_CONNECTOR_ROTATION",\n'\
-				'"FLOOR_CONNECTOR_1_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_1_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_1_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_1_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_2_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_2_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_2_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_2_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_3_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_3_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_3_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_3_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_4_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_4_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_4_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_4_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_5_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_5_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_5_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_5_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_6_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_6_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_6_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_6_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_7_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_7_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_7_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_7_DISP_WIDTH",\n'\
-				'"FLOOR_CONNECTOR_8_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_8_DISP_LENGTH",\n'\
-				'"FLOOR_CONNECTOR_8_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_8_DISP_WIDTH",\n'\
-				'"FLOOR_HEIGHT": "fuselage_FLOOR_HEIGHT",\n'\
-				'"FUSE_CYL_LENGTH": "fuselage_FUSE_CYL_LENGTH",\n'\
-				'"HORZ_DIAMETER": "fuselage_HORZ_DIAMETER",\n'\
-				'"VERT_DIAMETER": "fuselage_VERT_DIAMETER",\n'\
-				'"TAIL_DIAMETER": "FuselageTailDiameter"\n'\
-				'}},\n'\
-				'"model" : "{}",\n'\
-				'"name": "{}"\n'\
-				'}}'.format(model_name,'fuselage')
-			else:
-				output_string += '{{\n'\
-				'"assignment": {{\n'\
-				'"FLOOR_HEIGHT": "fuse_floor",\n'\
-				'"BOTTOM_CONNECTOR_ROTATION": "BodyRotAngle",\n'\
-				'"HORZ_DIAMETER": "fuse_width",\n'\
-				'"TUBE_LENGTH": "Vertical_Tube_Length",\n'\
-				'"VERT_DIAMETER": "fuse_height"\n'\
-				'}},\n'\
-				'"model" : "{}",\n'\
-				'"name": "{}"\n'\
-				'}}'.format(model_name,design.parts[key].pid)
-		elif design.parts[key].part_type == 'cg':
-			model_name = 'CargoCase'
-			instance_name = 'cargo_case'
-			output_string += '{{\n'\
-				'"assignment": {{\n'\
-				'"Rotation": "cargo_case_Rotation"\n'\
-				'}},\n'\
-				'"model" : "{}",\n'\
-				'"name": "{}"\n'\
-				'}}'.format(model_name,instance_name)
-		else:
+		# if design.parts[key].part_type == 'f':
+		# 	model_name = 'capsule_fuselage' if design.uav else "FUSE_SPHERE_CYL_CONE"
+		# 	if design.uav:
+		# 		output_string += '{{\n'\
+		# 		'"assignment": {{\n'\
+		# 		'"FLOOR_HEIGHT": "FuselageFloorHeight",\n'\
+		# 		'"LENGTH": "FuselageLength",\n'\
+		# 		'"MIDDLE_LENGTH": "FuselageMiddleLength",\n'\
+		# 		'"PORT_THICKNESS": "FuselagePortThickness",\n'\
+		# 		'"SEAT_1_FB": "FuselageSeatFB",\n'\
+		# 		'"SEAT_1_LR": "FuselageSeat1LR",\n'\
+		# 		'"SEAT_2_FB": "FuselageSeatFB",\n'\
+		# 		'"SEAT_2_LR": "FuselageSeat2LR",\n'\
+		# 		'"SPHERE_DIAMETER": "FuselageSphereDiameter",\n'\
+		# 		'"BOTTOM_CONNECTOR_OFFSET_LENGTH": "fuselage_BOTTOM_CONNECTOR_OFFSET_LENGTH",\n'\
+		# 		'"BOTTOM_CONNECTOR_OFFSET_WIDTH": "fuselage_BOTTOM_CONNECTOR_OFFSET_WIDTH",\n'\
+		# 		'"BOTTOM_CONNECTOR_ROTATION": "fuselage_BOTTOM_CONNECTOR_ROTATION",\n'\
+		# 		'"FLOOR_CONNECTOR_1_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_1_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_1_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_1_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_2_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_2_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_2_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_2_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_3_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_3_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_3_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_3_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_4_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_4_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_4_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_4_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_5_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_5_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_5_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_5_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_6_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_6_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_6_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_6_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_7_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_7_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_7_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_7_DISP_WIDTH",\n'\
+		# 		'"FLOOR_CONNECTOR_8_DISP_LENGTH": "fuselage_FLOOR_CONNECTOR_8_DISP_LENGTH",\n'\
+		# 		'"FLOOR_CONNECTOR_8_DISP_WIDTH": "fuselage_FLOOR_CONNECTOR_8_DISP_WIDTH",\n'\
+		# 		'"FLOOR_HEIGHT": "fuselage_FLOOR_HEIGHT",\n'\
+		# 		'"FUSE_CYL_LENGTH": "fuselage_FUSE_CYL_LENGTH",\n'\
+		# 		'"HORZ_DIAMETER": "fuselage_HORZ_DIAMETER",\n'\
+		# 		'"VERT_DIAMETER": "fuselage_VERT_DIAMETER",\n'\
+		# 		'"TAIL_DIAMETER": "FuselageTailDiameter"\n'\
+		# 		'}},\n'\
+		# 		'"model" : "{}",\n'\
+		# 		'"name": "{}"\n'\
+		# 		'}}'.format(model_name,'fuselage')
+		# 	else:
+		# 		output_string += '{{\n'\
+		# 		'"assignment": {{\n'\
+		# 		'"FLOOR_HEIGHT": "fuse_floor",\n'\
+		# 		'"BOTTOM_CONNECTOR_ROTATION": "BodyRotAngle",\n'\
+		# 		'"HORZ_DIAMETER": "fuse_width",\n'\
+		# 		'"TUBE_LENGTH": "Vertical_Tube_Length",\n'\
+		# 		'"VERT_DIAMETER": "fuse_height"\n'\
+		# 		'}},\n'\
+		# 		'"model" : "{}",\n'\
+		# 		'"name": "{}"\n'\
+		# 		'}}'.format(model_name,design.parts[key].pid)
+		# elif design.parts[key].part_type == 'cg':
+		# 	model_name = 'CargoCase'
+		# 	instance_name = 'cargo_case'
+		# 	output_string += '{{\n'\
+		# 		'"assignment": {{\n'\
+		# 		'"Rotation": "cargo_case_Rotation"\n'\
+		# 		'}},\n'\
+		# 		'"model" : "{}",\n'\
+		# 		'"name": "{}"\n'\
+		# 		'}}'.format(model_name,instance_name)
+		# else:
 
-			model_name = uav_type_models[design.parts[key].part_type]
-			output_string += '{\n'\
-			'"assignment": {\n'
-			param_string, new_params = generate_instance_params(key, design.parts[key].part_type)
-			output_string += param_string
-			parameters.extend(new_params)
-			output_string += '}},\n'\
-			'"model" : "{}",\n'\
-			'"name": "{}"\n'\
-			'}},'.format(model_name,design.parts[key].pid)
+		model_name = uav_type_models[design.parts[key].part_type]
+		output_string += '{\n'\
+		'"assignment": {\n'
+		param_string, new_params = generate_instance_params(key, design.parts[key].part_type)
+		output_string += param_string
+		parameters.extend(new_params)
+		output_string += '}},\n'\
+		'"model" : "{}",\n'\
+		'"name": "{}"\n'\
+		'}},'.format(model_name,design.parts[key].pid)
 
 
 
@@ -450,17 +472,70 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 
 	output_string += "],"
 	if design.uav:
+		control_channel_counter = 2
 		output_string += '"parameters":{\n'
 		for param in parameters:
-			output_string += '"{}" : "{}",\n'.format(param[0], param[1])
+			# print(param)
+			# print(param[0][param[0].index("_") + 1:])
+
+
+			cleaned_param = param[1] if param[2] else param[0][param[0].index("_") + 1:] 
+			if param[1][:4] == 'main':
+				cleaned_param = param[1][9:]
+				print("in")
+				print(param[1][9:])
+
+			if cleaned_param == "CONTROL_CHANNEL":
+				output_string += '"{}" : "{}",\n'.format(param[0], '{}'.format(str(control_channel_counter)))
+				control_channel_counter += 1
+			elif cleaned_param == "Length":
+				pid = param[0][:param[0].index("_")]
+				base_part = design.parts[design.parts[pid].connections["BaseConnection"]]
+				end_part = design.parts[design.parts[pid].connections["EndConnection"]]
+				if (base_part.part_type in ['bc', 'c']) and (end_part.part_type in ['bc', 'c']):
+					if (base_part.hub_type in ['main', 'fuselage']) and (end_part.hub_type in ['main', 'fuselage']):
+						output_string += '"{}" : "{}",\n'.format(param[0], 350)
+				else:
+					output_string += '"{}" : "{}",\n'.format(param[0], default_value_dict[cleaned_param])
+
+			elif cleaned_param == "BASE_ROT":
+				pid = param[0][:param[0].index("_")] 
+				print("tube pid:{}".format(pid))
+				# print("target:{}".format(design.parts[pid].connections["BaseConnection"][0]))
+				# print(design.parts[pid].connections["BaseConnection"][0] == 'w')
+				# print(param[0])
+				if design.parts[pid].connections["BaseConnection"][0] == 'w':
+					print(design.parts[pid].connections["BaseConnection"])
+					origin_hub = design.parts[design.parts[pid].connections["EndConnection"]]
+					origin_connection = None
+					for connection in origin_hub.connections.keys():
+						# print(connection)
+						if origin_hub.connections[connection] == pid:
+							origin_connection = connection
+					# print(origin_connection)
+					if origin_connection in ['rear', 'left']:
+						output_string += '"{}" : "{}",\n'.format(param[0], 90)
+					elif origin_connection in ['front', 'right']:
+						output_string += '"{}" : "{}",\n'.format(param[0], 270)
+				# else:
+				# 	output_string += '"{}" : "{}",\n'.format(param[0], 0)
+			elif cleaned_param in default_value_dict.keys():
+				output_string += '"{}" : "{}",\n'.format(param[0], default_value_dict[cleaned_param])
+			else:
+				output_string += '"{}" : "{}",\n'.format(param[0], param[1])
 		output_string = output_string[:-2]
 		output_string += '}}]'
 	
 	else:
 	
-		output_string += '"parameters":{\n'\
+		output_string += '"parameters":{\n'
 		for param in parameters:
-			output_string += '{} : {},\n'.format(param[0], param[1])
+
+			if param[0] in default_value_dict.keys():
+
+				output_string += '"{}" : "{}",\n'.format(param[0], default_value_dict[param[0]])
+			else:
+				output_string += '"{}" : "{}",\n'.format(param[0], param[1])
 
 
 		output_string = output_string[:-1]
@@ -511,10 +586,11 @@ class part():
 
 
 class connector(part):
-	def __init__(self, pid, centroid = [0,0,0], buffer_connector = False, uav = False, hub_type = 'main'):
+	def __init__(self, pid, centroid = [0,0,0], buffer_connector = False, uav = False, hub_type = 'part'):
 		part.__init__(self, pid, part_type = 'c')
 		self.centroid = centroid
 		self.buffer_connector = buffer_connector
+		self.hub_type = hub_type
 		if not uav:
 			self.connections = {'front': None, 'rear' : None, 'top': None, 'bottom': None, 'left': None, 'right': None}
 		else:
@@ -816,7 +892,8 @@ class design:
 
 			# Get dimensions of fuselage, create is for fuselage, add part to design
 			fuselage_dimensions = part_dimensions['f']
-			fuselage_id = 'f' + str(self.part_id_count)
+			fuselage_id = 'fuselage'
+			# 'f' + str(self.part_id_count)
 			self.part_id_count += 1
 			
 
@@ -848,9 +925,9 @@ class design:
 				temp_cursor[1] -= fuselage_dimensions["y_height"]/2
 				cargo_dimensions = part_dimensions['cg']
 				temp_cursor[1] -= cargo_dimensions["y_height"]/2
-				cargo = part('cargo', centroid = temp_cursor, part_type = 'cg', x_width=cargo_dimensions["x_width"], y_height=cargo_dimensions["y_height"], z_depth=cargo_dimensions["z_depth"])
+				cargo = part('cargo_case', centroid = temp_cursor, part_type = 'cg', x_width=cargo_dimensions["x_width"], y_height=cargo_dimensions["y_height"], z_depth=cargo_dimensions["z_depth"])
 				self.add_part(cargo)
-				self.make_connection(base_hub.pid, 'top', fuselage.pid, 'bottom')
+				self.make_connection(base_hub.pid, 'top', fuselage.pid, 'BottomConnector')
 				self.make_connection(base_hub.pid, 'bottom', cargo.pid, 'top')
 				self.frontmost_connector = base_hub
 				self.rearmost_connector = base_hub
@@ -994,7 +1071,35 @@ class design:
 
 				# Add first wing
 
-		elif w_count >= 2:
+		elif w_count == 2:
+			base_connector = connector('c' + str(self.part_id_count), buffer_connector = True, hub_type = 'main')
+			self.part_id_count += 1
+			self.add_part(base_connector)
+			
+			origin_connector.connections[direction] = base_connector.pid
+			if direction == 'front':
+				#right
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "right")
+			else:
+				#left
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "left")
+
+			temp_cursor = [x for x in cursor]
+			dimensions = part_dimensions['w']
+
+			temp_cursor[0] -= dimensions['x_width']/2
+			first_wing = part('w' + str(self.part_id_count), centroid=temp_cursor, part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+			self.part_id_count += 1
+			self.add_part(first_wing)
+			self.make_connection(first_wing.pid, 'Wing_Tube_Connector', base_connector.pid, 'front')
+
+			temp_cursor[0] += dimensions['x_width']
+			second_wing = part('w' + str(self.part_id_count), centroid=temp_cursor, part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
+			self.part_id_count += 1
+			self.add_part(second_wing)
+			self.make_connection(second_wing.pid, 'Wing_Tube_Connector', base_connector.pid, 'rear')
+
+
 
 			pass
 		# elif 'l' in tokens:
@@ -1007,14 +1112,16 @@ class design:
 
 			# Add perpendicular connector to start attatching parts
 			# TODO: fix issue with utilizing f + non w
-			base_connector = connector('c' + str(self.part_id_count), buffer_connector = True)
+			base_connector = connector('c' + str(self.part_id_count), buffer_connector = True, hub_type = 'main')
 			self.part_id_count += 1
 			self.add_part(base_connector)
 			
 			origin_connector.connections[direction] = base_connector.pid
 			if direction == 'front':
+				#right
 				self.make_connection(origin_connector.pid, direction, base_connector.pid, "right")
 			else:
+				#left
 				self.make_connection(origin_connector.pid, direction, base_connector.pid, "left")
 			
 			leftmost_connector = base_connector
@@ -1100,7 +1207,9 @@ class design:
 					# Attach part and new connector
 					self.add_part(new_part)
 					if new_part.part_type == 'h':
-						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, direction)
+						# placement = 'right' if direction == "front"
+						#used to be direction
+						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, "right")
 						# new_connector.connections[direction] = new_part.pid
 					else:
 						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'top')
