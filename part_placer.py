@@ -91,11 +91,9 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 
 	for key in type_parameters.keys():
 		for param in type_parameters[key]:
-			# print(param)
 			if len(param) >= 4:
 				default_value_dict[param[1]] = param[3]
 
-	# print(default_value_dict)
 
 	uav_type_models = {
 	'm' : 'kde_direct_KDE2315XF_885', 'fl' : '0394_para_flange', 't' : '0394OD_para_tube',
@@ -106,10 +104,7 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 	def generate_instance_params(pid, part_type):
 		return_string = ''
 		return_parameters = []
-		# print(part_type)
 		for param in type_parameters[part_type]:
-			# print(param)
-			# print(part_type)
 			value = param[1] if param[2] else pid + '_' + param[1]
 			return_string += '"{}" : "{}",\n'.format(param[0], value)
 			return_parameters.append((value, value, param[2]))
@@ -229,17 +224,19 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 						else:
 							connector_port = conn_key
 							dest_port = dest_key
-							uav_conversions = {'left': 'Side_Connector_3', 'front': 'Side_Connector_2', 'right': 'Side_Connector_1', 'rear': 'Side_Connector_4', 'top': 'Top_Connector', 'bottom': 'Bottom_Connector'}
+							uav_conversions = {'left': 'Side_Connector_1', 'front': 'Side_Connector_2', 'right': 'Side_Connector_3', 'rear': 'Side_Connector_4', 'top': 'Top_Connector', 'bottom': 'Bottom_Connector'}
 							part_type = design.parts[pid].part_type
 							if part_type == 'c':
 								connector_port = uav_conversions[conn_key]
 							elif part_type == 'cg':
-								connector_port = 'Case2HubConnector'
+								#disable
+								connector_port = 'Case2HubConnectore' #RUIN NAME TO REMOVE CASE
 							part_type = design.parts[dest].part_type
 							if part_type == 'c':
 								dest_port = uav_conversions[dest_key]
 							elif part_type == 'cg':
-								dest_port = 'Case2HubConnector'
+								#disable
+								dest_port = 'Case2HubConnectore' ##RUIN NAME TO REMOVE CASE
 
 							source_name = 'fuselage' if pid[0] == 'f' else pid
 							dest_name = 'fuselage' if dest[0] == 'f' else dest
@@ -475,15 +472,11 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 		control_channel_counter = 2
 		output_string += '"parameters":{\n'
 		for param in parameters:
-			# print(param)
-			# print(param[0][param[0].index("_") + 1:])
 
 
 			cleaned_param = param[1] if param[2] else param[0][param[0].index("_") + 1:] 
 			if param[1][:4] == 'main':
 				cleaned_param = param[1][9:]
-				print("in")
-				print(param[1][9:])
 
 			if cleaned_param == "CONTROL_CHANNEL":
 				output_string += '"{}" : "{}",\n'.format(param[0], '{}'.format(str(control_channel_counter)))
@@ -498,27 +491,30 @@ def custom_encoder(design, design_num, remove_boilerplate = True):
 				else:
 					output_string += '"{}" : "{}",\n'.format(param[0], default_value_dict[cleaned_param])
 
+			elif cleaned_param == "SPAN":
+				pid = param[0][:param[0].index("_")]
+				base_part = design.parts[pid]
+				if (base_part.part_type in ['l']):
+					output_string += '"{}" : "{}",\n'.format(param[0], 150)
+				else:
+					output_string += '"{}" : "{}",\n'.format(param[0], default_value_dict[cleaned_param])
+
 			elif cleaned_param == "BASE_ROT":
 				pid = param[0][:param[0].index("_")] 
-				print("tube pid:{}".format(pid))
-				# print("target:{}".format(design.parts[pid].connections["BaseConnection"][0]))
-				# print(design.parts[pid].connections["BaseConnection"][0] == 'w')
-				# print(param[0])
-				if design.parts[pid].connections["BaseConnection"][0] == 'w':
-					print(design.parts[pid].connections["BaseConnection"])
+				if design.parts[pid].connections["BaseConnection"][0] in ['w','l']:
 					origin_hub = design.parts[design.parts[pid].connections["EndConnection"]]
 					origin_connection = None
 					for connection in origin_hub.connections.keys():
-						# print(connection)
 						if origin_hub.connections[connection] == pid:
 							origin_connection = connection
-					# print(origin_connection)
 					if origin_connection in ['rear', 'left']:
 						output_string += '"{}" : "{}",\n'.format(param[0], 90)
 					elif origin_connection in ['front', 'right']:
 						output_string += '"{}" : "{}",\n'.format(param[0], 270)
-				# else:
-				# 	output_string += '"{}" : "{}",\n'.format(param[0], 0)
+					elif origin_connection in ['top']:
+						output_string += '"{}" : "{}",\n'.format(param[0], 270)
+					elif origin_connection in ['bottom']:
+						output_string += '"{}" : "{}",\n'.format(param[0], 90)
 			elif cleaned_param in default_value_dict.keys():
 				output_string += '"{}" : "{}",\n'.format(param[0], default_value_dict[cleaned_param])
 			else:
@@ -659,9 +655,6 @@ class design:
 
 	#Add a part, calls bounding box check
 	def add_part(self, part):
-		# print('adding part:' + part.pid)
-		# print('parts thus far:')
-		# print([part for part in self.parts])
 		if not part.part_type in ['c','t']:
 			if self.add_bounding_box(part.bounding_box):
 				self.parts[part.pid] = part
@@ -695,9 +688,6 @@ class design:
 	def print_parts_and_centroids(self):
 		for key in self.parts.keys():
 			part = self.parts[key]
-			# if not part.part_type == 'c':
-			# 	print(part.pid)
-			# 	part.bounding_box.print_bounds()
 			print(part.pid)	
 			part.bounding_box.print_bounds()
 
@@ -755,11 +745,22 @@ class design:
 	#set clusters in order they should be processed (center, fuselage containing cluster first, left, then right.)
 	def order_clusters(self):
 		new_clusters = []
-		for cluster in self.clusters:
-			if 'f' in cluster:
-				new_clusters = [cluster] + new_clusters
-			else:
-				new_clusters.append(cluster)
+		index = math.floor(len(self.clusters)/2)
+		alternator = -1
+		offset = 0
+		i = 0
+		while i < len(self.clusters):
+			new_clusters.append(self.clusters[index + (offset * alternator)])
+			if alternator == -1:
+				offset += 1
+			alternator *= -1
+			i += 1
+
+		# for cluster in self.clusters:
+		# 	if 'f' in cluster:
+		# 		new_clusters = [cluster] + new_clusters
+		# 	else:
+		# 		new_clusters.append(cluster)
 
 		self.clusters = new_clusters
 
@@ -781,10 +782,10 @@ class design:
 
 		direction = "front"
 		cluster = self.clusters[0]
-		# print("cursor being handed")
-		# print(cursor)
 		connector = self.frontmost_connector
-		cursor, z_min, z_max = self.place_cluster_pos_lock(cluster, cursor, connector, direction)
+		print("placing cluster: ")
+		print(cluster)
+		cursor, z_min, z_max, return_connector = self.place_cluster_pos_lock(cluster, cursor, connector, direction)
 		temporary_z_buffer = 10
 		rear_cursor[2] += z_min
 		rear_cursor[2] -= temporary_z_buffer
@@ -795,19 +796,23 @@ class design:
 		#For each cluster, identify a connector to branch off of and a cursor to use. Update cursors from maxes of last iteration and place
 		temporary_z_buffer = 10
 		for cluster  in self.clusters[1:]:
+			print("placing cluster: ")
+			print(cluster)
 			if alternator == -1:
 				connector = self.frontmost_connector
 				rear_cursor[2] += z_min
 				rear_cursor[2] -= temporary_z_buffer
 				cursor = front_cursor
 				direction = "front"
+				cursor, z_min, z_max, self.frontmost_connector = self.place_cluster_pos_lock(cluster, cursor, connector, direction)
 			else:
 				front_cursor[2] += z_max
 				front_cursor[2] += temporary_z_buffer
 				connector = self.rearmost_connector
 				cursor = rear_cursor
 				direction = "rear"
-			cursor, z_min, z_max = self.place_cluster_pos_lock(cluster, cursor, connector, direction)
+				cursor, z_min, z_max, self.rearmost_connector = self.place_cluster_pos_lock(cluster, cursor, connector, direction)
+			
 
 			alternator *= -1
 
@@ -817,6 +822,7 @@ class design:
 	def place_cluster_pos_lock(self, cluster, cursor, origin_connector, direction = "front"):
 
 		#Count subclusters and track where they start/end
+		base_connector = None
 		subcluster_count = 0
 		tokens = cluster
 		subcluster_boundaries = []
@@ -845,7 +851,6 @@ class design:
 		subcluster_boundary_offset = 0
 		subcluster_boundary_alternator = 1
 		j = 0 
-		# print(subclusters)
 		while j < len(subclusters):
 			subcluster_processing_order.append(subclusters[
 				subcluster_boundary_index + (subcluster_boundary_offset * 
@@ -927,7 +932,8 @@ class design:
 				temp_cursor[1] -= cargo_dimensions["y_height"]/2
 				cargo = part('cargo_case', centroid = temp_cursor, part_type = 'cg', x_width=cargo_dimensions["x_width"], y_height=cargo_dimensions["y_height"], z_depth=cargo_dimensions["z_depth"])
 				self.add_part(cargo)
-				self.make_connection(base_hub.pid, 'top', fuselage.pid, 'BottomConnector')
+				#disable
+				self.make_connection(base_hub.pid, 'top', fuselage.pid, 'BottomConnectore') #RUIN BOTTOM CONNECTOR NAME TO REMOVE FUSELAGE
 				self.make_connection(base_hub.pid, 'bottom', cargo.pid, 'top')
 				self.frontmost_connector = base_hub
 				self.rearmost_connector = base_hub
@@ -1076,13 +1082,13 @@ class design:
 			self.part_id_count += 1
 			self.add_part(base_connector)
 			
-			origin_connector.connections[direction] = base_connector.pid
+			# origin_connector.connections[direction] = base_connector.pid
 			if direction == 'front':
 				#right
-				self.make_connection(origin_connector.pid, direction, base_connector.pid, "right")
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "rear")
 			else:
 				#left
-				self.make_connection(origin_connector.pid, direction, base_connector.pid, "left")
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "front")
 
 			temp_cursor = [x for x in cursor]
 			dimensions = part_dimensions['w']
@@ -1091,13 +1097,13 @@ class design:
 			first_wing = part('w' + str(self.part_id_count), centroid=temp_cursor, part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
 			self.part_id_count += 1
 			self.add_part(first_wing)
-			self.make_connection(first_wing.pid, 'Wing_Tube_Connector', base_connector.pid, 'front')
+			self.make_connection(first_wing.pid, 'Wing_Tube_Connector', base_connector.pid, 'left')
 
 			temp_cursor[0] += dimensions['x_width']
 			second_wing = part('w' + str(self.part_id_count), centroid=temp_cursor, part_type = 'w', x_width=dimensions["x_width"], y_height=dimensions["y_height"], z_depth=dimensions["z_depth"])
 			self.part_id_count += 1
 			self.add_part(second_wing)
-			self.make_connection(second_wing.pid, 'Wing_Tube_Connector', base_connector.pid, 'rear')
+			self.make_connection(second_wing.pid, 'Wing_Tube_Connector', base_connector.pid, 'right')
 
 
 
@@ -1105,7 +1111,8 @@ class design:
 		# elif 'l' in tokens:
 		# 	pass
 		else:
-
+			offset = 0
+			alternator = 1
 			temp_cursor = [x for x in cursor]
 			string_index = len(tokens)//2
 			centered = len(tokens) % 2 == 1
@@ -1116,13 +1123,13 @@ class design:
 			self.part_id_count += 1
 			self.add_part(base_connector)
 			
-			origin_connector.connections[direction] = base_connector.pid
+			# origin_connector.connections[direction] = base_connector.pid
 			if direction == 'front':
 				#right
-				self.make_connection(origin_connector.pid, direction, base_connector.pid, "right")
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "rear")
 			else:
 				#left
-				self.make_connection(origin_connector.pid, direction, base_connector.pid, "left")
+				self.make_connection(origin_connector.pid, direction, base_connector.pid, "front")
 			
 			leftmost_connector = base_connector
 			rightmost_connector = base_connector
@@ -1131,6 +1138,9 @@ class design:
 
 			while i < len(tokens):
 				current_token_index = string_index + (offset * alternator)
+
+				print("placing token: "+ tokens[current_token_index])
+				print(current_token_index)
 
 				dimensions = part_dimensions[tokens[current_token_index]]
 				#The first part gets centered on the cursor, the following are placed either to the left or right
@@ -1150,14 +1160,16 @@ class design:
 
 					#Connect the base to the base connector (different for horizontal and vertical)
 					if new_part.part_type == 'h':
-						self.make_connection(new_part.pid, "baseplate", base_connector.pid, "right")
+						#right
+						self.make_connection(new_part.pid, "baseplate", base_connector.pid, 'front')
 					elif new_part.part_type == 'l':
-						self.make_connection(new_part.pid, "Wing_Tube_Connector", base_connector.pid, "right")
+						self.make_connection(new_part.pid, "Wing_Tube_Connector", base_connector.pid, "top")
 					else:
 						self.make_connection(new_part.pid, "baseplate", base_connector.pid, "top")
 
 					# Increment the offset
 					offset += 1
+					alternator = -1
 
 				else:
 
@@ -1172,14 +1184,16 @@ class design:
 					if alternator == -1:
 
 						# Attach buffer connecter, create and attach new connector to hold part
-						self.make_connection(leftmost_connector.pid, 'front', buffer_connector.pid, 'rear')
+						#front, rear
+						self.make_connection(leftmost_connector.pid, 'left', buffer_connector.pid, 'right')
 						self.part_id_count += 1
 						new_connector = connector('c' + str(self.part_id_count))
 						self.part_id_count += 1
 						self.add_part(new_connector)
-						buffer_connector.connections['front'] = new_connector.pid
-						new_connector.connections['rear'] = buffer_connector.pid
-						self.make_connection(new_connector.pid, 'rear', buffer_connector.pid, 'front')
+						# buffer_connector.connections['front'] = new_connector.pid
+						# new_connector.connections['rear'] = buffer_connector.pid
+						#rear, front
+						self.make_connection(new_connector.pid, 'right', buffer_connector.pid, 'left')
 						
 
 						# Update leftmost position and connector
@@ -1189,14 +1203,12 @@ class design:
 					else:
 
 						# Attach buffer connecter, create and attach new connector to hold part
-						buffer_connector.connections['front'] = rightmost_connector.pid
-						rightmost_connector.connections['rear'] = buffer_connector.pid
-						self.make_connection(rightmost_connector.pid, 'rear', buffer_connector.pid, 'front')
+						self.make_connection(rightmost_connector.pid, 'right', buffer_connector.pid, 'left')
 						self.part_id_count += 1
 						new_connector = connector('c' + str(self.part_id_count))
 						self.part_id_count += 1
 						self.add_part(new_connector)
-						self.make_connection(new_connector.pid, 'front', buffer_connector.pid, 'rear')
+						self.make_connection(new_connector.pid, 'left', buffer_connector.pid, 'right')
 						
 
 						# Update rightmost position and connector
@@ -1209,8 +1221,10 @@ class design:
 					if new_part.part_type == 'h':
 						# placement = 'right' if direction == "front"
 						#used to be direction
-						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, "right")
+						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'front')
 						# new_connector.connections[direction] = new_part.pid
+					elif new_part.part_type == 'l':
+						self.make_connection(new_part.pid, "Wing_Tube_Connector", new_connector.pid, "top")
 					else:
 						self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'top')
 					
@@ -1279,8 +1293,8 @@ class design:
 					new_centroid[0] = minimum_position + 1
 					new_buffer.centroid = new_centroid
 					self.add_part(new_buffer)
-					self.parts[rightmost_connector.pid].connections['rear'] = new_buffer.pid
-					self.make_connection(rightmost_connector.pid, 'rear', new_buffer.pid, 'front')
+					# self.parts[rightmost_connector.pid].connections['right'] = new_buffer.pid
+					self.make_connection(rightmost_connector.pid, 'right', new_buffer.pid, 'left')
 					rightmost_connector = new_buffer
 
 				else:
@@ -1289,7 +1303,7 @@ class design:
 					new_buffer.centroid = new_centroid
 					self.add_part(new_buffer)
 					# self.parts[leftmost_connector.pid].connections['front'] = new_buffer.pid
-					self.make_connection(leftmost_connector.pid, 'front', new_buffer.pid, 'rear')
+					self.make_connection(leftmost_connector.pid, 'left', new_buffer.pid, 'right')
 					leftmost_connector = new_buffer
 				buffer_connector = new_buffer
 
@@ -1310,14 +1324,14 @@ class design:
 			# TODO: Consider chainging to z_bound_check function later	
 			z_max = sub_z_max if sub_z_max > z_max else z_max
 			z_min = sub_z_min if sub_z_min > z_min else z_min
-			
-		return temp_cursor, z_max, z_min
+
+		return_connector = base_connector if base_connector else base_hub	
+		return temp_cursor, z_max, z_min, return_connector
 
 
 	#Place clusters that are on a separate connector from the principal connector
 	def place_cluster_separate_connector(self, tokens, cursor, origin_connector, subcluster_schema = 'Grouped', subcluster_index = 0, part_schema = "Grouped", deviation = 10, z_max = 0, quadrant = 0):
 
-		# print('Placing subclusters')
 		alternator = -1
 		offset = 0
 		directions = [-1,1,-1,1]
@@ -1329,7 +1343,8 @@ class design:
 		self.add_part(rising_connector)
 		# rising_connector.connections["rear"] = origin_connector.pid
 		# self.parts[origin_connector.pid].connections[vertical_connection[quadrant]] = rising_connector.pid
-		self.make_connection(origin_connector.pid, vertical_connection[quadrant], rising_connector.pid, 'rear')
+		# self.make_connection(origin_connector.pid, vertical_connection[quadrant], rising_connector.pid, 'rear')
+		self.make_connection(origin_connector.pid, vertical_connection[quadrant], rising_connector.pid, vertical_connection[(quadrant+2)%2])
 
 		temp_cursor = [x for x in cursor]
 		string_index = len(tokens)//2
@@ -1337,10 +1352,11 @@ class design:
 
 		# Add perpendicular connector to start attatching parts
 		# TODO: fix issue with utilizing f + non w
-		base_connector = connector('c' + str(self.part_id_count))
-		self.part_id_count += 1
-		self.add_part(base_connector)
-		self.make_connection(rising_connector.pid, rising_connection[quadrant], base_connector.pid, vertical_connection[(quadrant + 2) % 4])
+		base_connector = rising_connector
+		# base_connector = connector('c' + str(self.part_id_count))
+		# self.part_id_count += 1
+		# self.add_part(base_connector)
+		# self.make_connection(rising_connector.pid, rising_connection[quadrant], base_connector.pid, vertical_connection[(quadrant + 2) % 4])
 		leftmost_connector = base_connector
 		rightmost_connector = base_connector
 		leftmost = [x for x in cursor]
@@ -1352,6 +1368,10 @@ class design:
 		while i < len(tokens):
 			current_token_index = string_index + (offset * alternator)
 			dimensions = part_dimensions[tokens[current_token_index]]
+
+			print("placing token: "+ tokens[current_token_index])
+			print(current_token_index)
+
 			#The first part gets centered on the cursor, the following are placed either to the left or right
 			if i == 0 and centered:
 
@@ -1370,10 +1390,12 @@ class design:
 				#Connect the base to the base connector (different for horizontal and vertical)
 				# new_part.connections["baseplate"] = base_connector.pid
 				if new_part.part_type == 'h':
-					self.make_connection(new_part.pid, 'baseplate', base_connector.pid, 'right')
+					self.make_connection(new_part.pid, 'baseplate', base_connector.pid, 'front')
 					# base_connector.connections['right'] = new_part.pid
+				elif new_part.part_type == 'l':
+						self.make_connection(new_part.pid, "Wing_Tube_Connector", base_connector.pid, vertical_connection[quadrant]) #"top"
 				else:
-					self.make_connection(new_part.pid, 'baseplate', base_connector.pid, 'top')
+					self.make_connection(new_part.pid, 'baseplate', base_connector.pid, vertical_connection[quadrant]) #top
 					# base_connector.connections['top'] = new_part.pid
 
 				# Increment the offset
@@ -1394,14 +1416,16 @@ class design:
 				if alternator == -1:
 
 					# Attach buffer connecter, create and attach new connector to hold part
-					# buffer_connector.connections['rear'] = leftmost_connector.pid
-					self.make_connection(buffer_connector.pid, 'rear', leftmost_connector.pid, 'front')
+					#front, rear
+					self.make_connection(leftmost_connector.pid, 'left', buffer_connector.pid, 'right')
+					self.part_id_count += 1
 					new_connector = connector('c' + str(self.part_id_count))
 					self.part_id_count += 1
 					self.add_part(new_connector)
 					# buffer_connector.connections['front'] = new_connector.pid
 					# new_connector.connections['rear'] = buffer_connector.pid
-					self.make_connection(buffer_connector.pid, 'front', new_connector.pid, 'rear')
+					#rear, front
+					self.make_connection(new_connector.pid, 'right', buffer_connector.pid, 'left')
 					
 
 					# Update leftmost position and connector
@@ -1411,11 +1435,11 @@ class design:
 				else:
 
 					# Attach buffer connecter, create and attach new connector to hold part
-					self.make_connection(buffer_connector.pid, 'front', rightmost_connector.pid, 'rear')
+					self.make_connection(rightmost_connector.pid, 'right', buffer_connector.pid, 'left')
 					new_connector = connector('c' + str(self.part_id_count))
 					self.part_id_count += 1
 					self.add_part(new_connector)
-					self.make_connection(buffer_connector.pid, 'rear', new_connector.pid, 'front')
+					self.make_connection(new_connector.pid, 'left', buffer_connector.pid, 'right')
 					
 
 					# Update rightmost position and connector
@@ -1425,11 +1449,11 @@ class design:
 					offset += 1
 				# Attach part and new connector
 				if new_part.part_type == 'h':
-					self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'right')
+					self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'front')
 				elif new_part.part_type == 'l':
-						self.make_connection(new_part.pid, "Wing_Tube_Connector", base_connector.pid, "right")
+						self.make_connection(new_part.pid, "Wing_Tube_Connector", new_connector.pid, vertical_connection[quadrant]) #"top"
 				else:
-					self.make_connection(new_part.pid, 'baseplate', new_connector.pid, 'top')
+					self.make_connection(new_part.pid, 'baseplate', new_connector.pid, vertical_connection[quadrant])  #"top"
 				alternator *= -1
 			if dimensions["z_depth"] > z_max:
 				z_max = dimensions["z_depth"]
@@ -1440,12 +1464,19 @@ class design:
 		return return_values[quadrant]
 
 
-	def print_parts(self):
+	def print_parts(self, pids = True, connections = True):
+		pid_list = []
 		for key in self.parts.keys():
+			pid_list.append(self.parts[key].pid)
+
 			# print(self.parts[key])
-			print(self.parts[key].pid)
+		if pids:
+			pid_list = sorted(pid_list)
+			for pid in pid_list:
+				print(pid)
+		if connections:
 			print(self.parts[key].connections)
-			print(self.parts[key].toJSON())
+
 
 
 if __name__ == '__main__':
@@ -1478,6 +1509,10 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	output_designs = []
 	
+	# Designs
+	#[hh][pp][wfw][pp][hh]
+	#[hhhh][ww][phhp][wfw][phhp][ww][hhhh]
+	#
 	if args.string_input == "True":
 		file_name = args.filename
 		source = open(file_name)
@@ -1495,6 +1530,7 @@ if __name__ == '__main__':
 		new_design = None
 		new_design = design(clusters = design_string, uav = args.uav == "True")
 		new_design.place_all_parts()
+		# new_design.print_parts(connections = False)
 		output = custom_encoder(new_design, i, remove_boilerplate = args.debug, )
 		output_designs.append(output)
 		new_design.parts = {}
